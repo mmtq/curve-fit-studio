@@ -13,7 +13,7 @@ import {
   Legend,
 } from 'chart.js';
 import { inv, multiply, transpose } from 'mathjs';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
@@ -68,15 +68,20 @@ export default function PolynomialFitPage() {
   const fitX = Array.from({ length: 100 }, (_, i) => minX + (i * (maxX - minX)) / 99);
   const fitY = fitX.map(x => evaluatePoly(coeffs, x));
 
-  const downloadPlot = async () => {
-    const chartCanvas = document.querySelector('canvas');
-    if (!chartCanvas) return;
-    const canvas = await html2canvas(chartCanvas);
-    const link = document.createElement('a');
-    link.download = 'polynomial-fit-plot.png';
-    link.href = canvas.toDataURL();
-    link.click();
-  };
+    const downloadPlot = async () => {
+        const chartCanvas = document.querySelector('canvas');
+        if (!chartCanvas) return;
+
+        try {
+            const dataUrl = await domtoimage.toPng(chartCanvas as HTMLElement);
+            const link = document.createElement('a');
+            link.download = 'polynomial-fit-plot.png';
+            link.href = dataUrl;
+            link.click();
+        } catch (error) {
+            console.error('Download failed:', error);
+        }
+    };
 
   return (
     <main className="p-6 max-w-3xl mx-auto">

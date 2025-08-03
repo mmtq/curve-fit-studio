@@ -1,3 +1,4 @@
+/* --- File: app/fit/linear/page.tsx --- */
 'use client';
 
 import { useState, useRef } from 'react';
@@ -11,11 +12,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
@@ -65,124 +63,88 @@ export default function LinearFitPage() {
   const fitX = [minX, maxX];
   const fitY = fitX.map(x => slope * x + intercept);
 
-  const downloadPlot = async () => {
-    const chartCanvas = document.querySelector('canvas');
-    if (!chartCanvas) return;
-    const canvas = await html2canvas(chartCanvas);
+const downloadPlot = async () => {
+  const chartCanvas = document.querySelector('canvas');
+  if (!chartCanvas) return;
+
+  try {
+    const dataUrl = await domtoimage.toPng(chartCanvas as HTMLElement);
     const link = document.createElement('a');
     link.download = 'linear-fit-plot.png';
-    link.href = canvas.toDataURL();
+    link.href = dataUrl;
     link.click();
-  };
+  } catch (error) {
+    console.error('Download failed:', error);
+  }
+};
 
   return (
-    <main className="p-6 max-w-3xl mx-auto space-y-6 text-foreground">
-      <h1 className="text-2xl font-semibold">Linear Curve Fit</h1>
+    <main className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-4">Linear Curve Fit</h1>
 
-      <Card>
-        <CardContent className="p-4">
-          <table className="w-full border-separate border-spacing-y-2 text-sm">
-            <thead className="text-muted-foreground">
-              <tr>
-                <th className="text-left">X</th>
-                <th className="text-left">Y</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {points.map(([x, y], i) => (
-                <tr key={i}>
-                  <td>
-                    <Input
-                      type="number"
-                      value={x}
-                      onChange={e => handlePointChange(i, +e.target.value, y)}
-                      className="w-full"
-                    />
-                  </td>
-                  <td>
-                    <Input
-                      type="number"
-                      value={y}
-                      onChange={e => handlePointChange(i, x, +e.target.value)}
-                      className="w-full"
-                    />
-                  </td>
-                  <td>
-                    <Button
-                      variant="ghost"
-                      className="text-destructive"
-                      onClick={() => removePoint(i)}
-                    >
-                      Remove
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-4">
-            <Button onClick={addPoint} variant="default">
-              Add Point
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <table className="w-full mb-4">
+        <thead>
+          <tr><th>X</th><th>Y</th><th></th></tr>
+        </thead>
+        <tbody>
+          {points.map(([x, y], i) => (
+            <tr key={i}>
+              <td><input type="number" value={x} onChange={e => handlePointChange(i, +e.target.value, y)} /></td>
+              <td><input type="number" value={y} onChange={e => handlePointChange(i, x, +e.target.value)} /></td>
+              <td><button onClick={() => removePoint(i)} className="text-red-500">Remove</button></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <button onClick={addPoint} className="bg-blue-500 text-white px-4 py-2 rounded">Add Point</button>
 
-      <div>
-        <h2 className="text-lg font-medium mb-1">Fitted Equation</h2>
-        <p className="font-mono text-muted-foreground">
-          y = {slope.toFixed(2)}x + {intercept.toFixed(2)}
-        </p>
-      </div>
+      <h2 className="mt-6 mb-2 text-lg">Fitted Equation</h2>
+      <p className="font-mono">y = {slope.toFixed(2)}x + {intercept.toFixed(2)}</p>
 
-      <div>
-        <h3 className="font-semibold mb-1">Error Metrics</h3>
-        <ul className="list-disc pl-6 text-sm text-muted-foreground space-y-1">
-          <li>RMSE: {rmse.toFixed(4)}</li>
-          <li>R²: {r2.toFixed(4)}</li>
-        </ul>
-      </div>
+      <h3 className="mt-4">Error Metrics</h3>
+      <ul className="list-disc pl-6">
+        <li>RMSE: {rmse.toFixed(4)}</li>
+        <li>R²: {r2.toFixed(4)}</li>
+      </ul>
 
-      <Card>
-        <CardContent className="p-4">
-          <Line
-            ref={chartRef}
-            data={{
-              labels: xVals,
-              datasets: [
-                {
-                  label: 'Data Points',
-                  data: points.map(([x, y]) => ({ x, y })),
-                  borderColor: 'hsl(180, 70%, 50%)',
-                  backgroundColor: 'hsl(180, 70%, 80%)',
-                  showLine: false,
-                },
-                {
-                  label: 'Fitted Line',
-                  data: fitX.map((x, i) => ({ x, y: fitY[i] })),
-                  borderColor: 'hsl(340, 70%, 50%)',
-                  backgroundColor: 'hsl(340, 70%, 80%)',
-                  fill: false,
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              scales: {
-                x: { type: 'linear', position: 'bottom' },
-                y: { beginAtZero: true },
+      <div className="mt-6">
+        <Line
+          ref={chartRef}
+          data={{
+            labels: xVals,
+            datasets: [
+              {
+                label: 'Data Points',
+                data: points.map(([x, y]) => ({ x, y })),
+                borderColor: 'rgba(75,192,192,1)',
+                backgroundColor: 'rgba(75,192,192,0.4)',
+                showLine: false,
               },
-            }}
-          />
-        </CardContent>
-      </Card>
-
-      <div>
-        <Button onClick={downloadPlot} variant="default" className="bg-green-600 hover:bg-green-700">
-          Download Plot
-        </Button>
+              {
+                label: 'Fitted Line',
+                data: fitX.map((x, i) => ({ x, y: fitY[i] })),
+                borderColor: 'rgba(255,99,132,1)',
+                backgroundColor: 'rgba(255,99,132,0.4)',
+                fill: false,
+              },
+            ],
+          }}
+          options={{
+            responsive: true,
+            scales: {
+              x: { type: 'linear', position: 'bottom' },
+              y: { beginAtZero: true },
+            },
+          }}
+        />
       </div>
+
+      <button
+        onClick={downloadPlot}
+        className="mt-4 bg-green-600 text-white px-4 py-2 rounded"
+      >
+        Download Plot
+      </button>
     </main>
   );
 }

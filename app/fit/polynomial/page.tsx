@@ -13,7 +13,7 @@ import {
 } from 'chart.js';
 import { inv, multiply, transpose } from 'mathjs';
 import domtoimage from 'dom-to-image';
-import { X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -23,6 +23,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Chart from '@/components/general/chart';
+import { GetCode } from '@/components/general/get-code';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
@@ -91,7 +93,7 @@ export default function PolynomialFitPage() {
   const fitX = Array.from({ length: 100 }, (_, i) => minX + (i * (maxX - minX)) / 99);
   const fitY = coeffs ? fitX.map(x => evaluatePoly(coeffs, x)) : [];
 
-    useEffect(() => {
+  useEffect(() => {
     setError(fitError || '');
     console.log('fitError', fitError);
   }, [fitError]);
@@ -204,22 +206,6 @@ export default function PolynomialFitPage() {
         )
       }
 
-      {/* <Card className="border border-border">
-        <CardHeader>
-          <CardTitle className="text-lg">Polynomial Degree</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Input
-            type="number"
-            min={1}
-            max={10}
-            value={degree}
-            onChange={e => setDegree(Number(e.target.value))}
-            className="w-32"
-          />
-        </CardContent>
-      </Card> */}
-
       <div className="grid sm:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -247,69 +233,21 @@ export default function PolynomialFitPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Visualization</CardTitle>
+          <CardTitle>
+            <div className='flex items-center justify-between'>
+              <div>Visualization</div>
+              <div className='flex items-center gap-2'>
+                <Button onClick={downloadPlot} variant={'outline'}>
+                  <Download /> Download Plot
+                </Button>
+                <GetCode points={points} name='polynomial' degree={degree} />
+              </div>
+            </div>
+          </CardTitle>
+
         </CardHeader>
         <CardContent>
-          <Line
-            data={{
-              labels: xVals,
-              datasets: [
-                {
-                  label: 'Data Points',
-                  data: points.map(([x, y]) => ({ x, y })),
-                  borderColor: 'rgba(14, 165, 233, 1)',
-                  backgroundColor: 'rgba(14, 165, 233, 0.4)',
-                  pointRadius: 6,
-                  showLine: false,
-                },
-                {
-                  label: 'Fitted Curve',
-                  data: fitX.map((x, i) => ({ x, y: fitY[i] })),
-                  borderColor: 'rgba(234, 88, 12, 1)',
-                  borderWidth: 3,
-                  fill: false,
-                  tension: 0.2,
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              interaction: {
-                mode: 'nearest',
-                intersect: false,
-              },
-              plugins: {
-                legend: {
-                  position: 'top',
-                  labels: {
-                    color: '#374151',
-                    font: { weight: 'bold' },
-                  },
-                },
-                tooltip: {
-                  enabled: true,
-                  backgroundColor: 'rgba(0,0,0,0.8)',
-                  titleColor: '#fff',
-                  bodyColor: '#ddd',
-                  cornerRadius: 4,
-                  padding: 8,
-                },
-              },
-              scales: {
-                x: {
-                  type: 'linear',
-                  position: 'bottom',
-                  grid: { color: '#e5e7eb' },
-                  ticks: { color: '#6b7280' },
-                },
-                y: {
-                  beginAtZero: true,
-                  grid: { color: '#e5e7eb' },
-                  ticks: { color: '#6b7280' },
-                },
-              },
-            }}
-          />
+          <Chart fitX={fitX} fitY={fitY} points={points} />
         </CardContent>
       </Card>
 

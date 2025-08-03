@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -12,7 +12,7 @@ import {
   Legend,
 } from 'chart.js';
 import domtoimage from 'dom-to-image';
-import { X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -21,6 +21,8 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import Chart from '@/components/general/chart';
+import { GetCode } from '@/components/general/get-code';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
@@ -60,7 +62,6 @@ export default function LinearFitPage() {
     [2, 3],
     [3, 5],
   ]);
-  const chartRef = useRef(null);
   const [xVal, setXVal] = useState<string>('');
   const [yVal, setYVal] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -198,81 +199,27 @@ export default function LinearFitPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Visualization</CardTitle>
+          <CardTitle>
+            <div className='flex items-center justify-between'>
+              <div>Visualization</div>
+              <div className='flex items-center gap-2'>
+                <Button onClick={downloadPlot} variant={'outline'}>
+                  <Download /> Download Plot
+                </Button>
+                <GetCode points={points} name='linear' />
+              </div>
+            </div>
+          </CardTitle>
+
         </CardHeader>
         <CardContent className="relative">
-          <Line
-            ref={chartRef}
-            data={{
-              labels: xVals,
-              datasets: [
-                {
-                  label: 'Data Points',
-                  data: points.map(([x, y]) => ({ x, y })),
-                  borderColor: 'rgba(14, 165, 233, 1)',
-                  backgroundColor: 'rgba(14, 165, 233, 0.4)',
-                  pointRadius: 6,
-                  showLine: false,
-                },
-                {
-                  label: 'Fitted Line',
-                  data: fitX.map((x, i) => ({ x, y: fitY[i] })),
-                  borderColor: 'rgba(234, 88, 12, 1)',
-                  borderWidth: 3,
-                  fill: false,
-                  tension: 0.2,
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              interaction: {
-                mode: 'nearest',
-                intersect: false,
-              },
-              plugins: {
-                legend: {
-                  position: 'top',
-                  labels: {
-                    color: '#374151',
-                    font: { weight: 'bold' },
-                  },
-                },
-                tooltip: {
-                  enabled: true,
-                  backgroundColor: 'rgba(0,0,0,0.8)',
-                  titleColor: '#fff',
-                  bodyColor: '#ddd',
-                  cornerRadius: 4,
-                  padding: 8,
-                },
-              },
-              scales: {
-                x: {
-                  type: 'linear',
-                  position: 'bottom',
-                  grid: { color: '#e5e7eb' },
-                  ticks: { color: '#6b7280' },
-                },
-                y: {
-                  beginAtZero: true,
-                  grid: { color: '#e5e7eb' },
-                  ticks: { color: '#6b7280' },
-                },
-              },
-            }}
+          <Chart
+            fitX={fitX}
+            fitY={fitY}
+            points={points}
           />
         </CardContent>
       </Card>
-
-      <div className="text-center">
-        <Button
-          onClick={downloadPlot}
-          className="mt-4"
-        >
-          Download Plot
-        </Button>
-      </div>
     </main>
   );
 }

@@ -250,12 +250,6 @@ export default function PolynomialFitPage() {
           <Chart fitX={fitX} fitY={fitY} points={points} />
         </CardContent>
       </Card>
-
-      <div className="text-center">
-        <Button onClick={downloadPlot} className="mt-4">
-          Download Plot
-        </Button>
-      </div>
     </main>
   );
 }

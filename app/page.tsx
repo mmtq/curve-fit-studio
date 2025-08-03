@@ -1,3 +1,7 @@
+import Algos from "@/components/general/algos";
+import FeaturesSection from "@/components/general/features";
+import { motion } from 'framer-motion';
+
 import Link from "next/link";
 import { FaChartLine, FaProjectDiagram, FaChartArea, FaBolt } from "react-icons/fa";
 
@@ -31,30 +35,8 @@ const algoCards = [
 export default function HomePage() {
   return (
     <main className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-5xl font-extrabold mb-6 text-center">CurveFit Visualizer</h1>
-      <p className="text-gray-700 mb-12 text-center max-w-3xl mx-auto text-lg">
-        Input your data points and explore how different curve fitting algorithms model your data.
-        Choose between Linear, Polynomial, Exponential, and Power fits to best match your needs.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-        {algoCards.map(({ title, href, description, icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="group block border border-gray-300 rounded-xl p-6 hover:shadow-lg hover:border-blue-500 transition-shadow transition-colors duration-300 bg-white dark:bg-gray-800 dark:border-gray-700"
-          >
-            <div className="flex items-center space-x-4 mb-3">
-              <div className="rounded-full bg-gray-100 dark:bg-gray-700 p-2 group-hover:bg-blue-100 group-hover:dark:bg-blue-900 transition-colors duration-300">
-                {icon}
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors duration-300">
-                {title}
-              </h2>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300">{description}</p>
-          </Link>
-        ))}
-      </div>
+      <Algos algoCards={algoCards} />
+      <FeaturesSection />
     </main>
   );
 }

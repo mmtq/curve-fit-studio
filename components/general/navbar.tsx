@@ -1,4 +1,6 @@
-// import Logo from "@/registry/default/components/navbar-components/logo"
+'use client'
+
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   NavigationMenu,
@@ -11,68 +13,62 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import Link from "next/link"
+import { Menu } from "lucide-react"
 
-// Navigation links array to be used in both desktop and mobile menus
 const navigationLinks = [
-  { href: "/", label: "Home", active: true },
-  { href: "#", label: "Features" },
-  { href: "#", label: "Docs" },
-  { href: "#", label: "Team" },
+  { href: "/", label: "Home" },
+  { href: "#features", label: "Features" },
+  { href: "/theory", label: "Theory" },
+  { href: "/team", label: "Team" },
 ]
 
 export default function NavBar() {
   return (
-    <header className="border-b px-4 md:px-6">
-      <div className="flex h-16 items-center justify-between gap-4">
-        {/* Left side */}
+    <header className="border-b px-4 md:px-6 bg-background">
+      <div className="flex h-16 items-center justify-between">
+        {/* Left: Logo + Nav */}
+        <div className="flex items-center gap-6">
+          <Link href="/" className="text-2xl font-bold tracking-tight text-primary">
+            CurveFit Studio
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex gap-4">
+            {navigationLinks.map((link, i) => (
+              <Link
+                key={i}
+                href={link.href}
+                className="text-muted-foreground hover:text-primary text-sm font-medium transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* Right: CTA + Mobile Menu */}
         <div className="flex items-center gap-2">
-          {/* Mobile menu trigger */}
+          <Button asChild size="sm">
+            <a href="#">Get Started</a>
+          </Button>
+
+          {/* Mobile Menu */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                className="group size-8 md:hidden"
-                variant="ghost"
-                size="icon"
-              >
-                <svg
-                  className="pointer-events-none"
-                  width={16}
-                  height={16}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M4 12L20 12"
-                    className="origin-center -translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-x-0 group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[315deg]"
-                  />
-                  <path
-                    d="M4 12H20"
-                    className="origin-center transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.8)] group-aria-expanded:rotate-45"
-                  />
-                  <path
-                    d="M4 12H20"
-                    className="origin-center translate-y-[7px] transition-all duration-300 ease-[cubic-bezier(.5,.85,.25,1.1)] group-aria-expanded:translate-y-0 group-aria-expanded:rotate-[135deg]"
-                  />
-                </svg>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="w-5 h-5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-36 p-1 md:hidden">
-              <NavigationMenu className="max-w-none *:w-full">
-                <NavigationMenuList className="flex-col items-start gap-0 md:gap-2">
-                  {navigationLinks.map((link, index) => (
-                    <NavigationMenuItem key={index} className="w-full">
+            <PopoverContent align="end" className="w-40 p-2 md:hidden">
+              <NavigationMenu className="w-full">
+                <NavigationMenuList className="flex-col gap-1">
+                  {navigationLinks.map((link, i) => (
+                    <NavigationMenuItem key={i}>
                       <NavigationMenuLink
-                        href={link.href}
-                        className="py-1.5"
-                        active={link.active}
+                        asChild
+                        className="block w-full text-sm px-2 py-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
                       >
-                        {link.label}
+                        <Link href={link.href}>{link.label}</Link>
                       </NavigationMenuLink>
                     </NavigationMenuItem>
                   ))}
@@ -80,38 +76,6 @@ export default function NavBar() {
               </NavigationMenu>
             </PopoverContent>
           </Popover>
-          {/* Main nav */}
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
-              {/* <Logo /> */}
-              <span className="font-bold text-2xl">CurveFit Studio</span>
-            </Link>
-            {/* Navigation menu */}
-            <NavigationMenu className="max-md:hidden">
-              <NavigationMenuList className="gap-2">
-                {navigationLinks.map((link, index) => (
-                  <NavigationMenuItem key={index}>
-                    <NavigationMenuLink
-                      active={link.active}
-                      href={link.href}
-                      className="text-muted-foreground hover:text-primary py-1.5 font-medium"
-                    >
-                      {link.label}
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
-          </div>
-        </div>
-        {/* Right side */}
-        <div className="flex items-center gap-2">
-          {/* <Button asChild variant="ghost" size="sm" className="text-sm">
-            <a href="#">Sign In</a>
-          </Button> */}
-          <Button asChild size="sm" className="text-sm">
-            <a href="#">Get Started</a>
-          </Button>
         </div>
       </div>
     </header>

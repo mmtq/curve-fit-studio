@@ -8,21 +8,21 @@ export default function TeamSection() {
     {
       name: 'Iftaker Ahamed',
       role: 'C221020',
-      emoji: '🧢',
+      image: 'https://avatars.githubusercontent.com/u/95583680',
       bg: 'bg-pink-200 dark:bg-pink-800',
       text: 'text-pink-900 dark:text-pink-200',
     },
     {
       name: 'Mir Md Tarihmul Quader',
       role: 'C221017',
-      emoji: '🎩',
+      image: 'https://avatars.githubusercontent.com/u/147413532',
       bg: 'bg-orange-200 dark:bg-orange-800',
       text: 'text-orange-900 dark:text-orange-200',
     },
     {
       name: 'Turja Dutta',
       role: 'C221026',
-      emoji: '👳‍♂️',
+      image: 'https://avatars.githubusercontent.com/u/133532872',
       bg: 'bg-purple-200 dark:bg-purple-800',
       text: 'text-purple-900 dark:text-purple-200',
     },
@@ -32,7 +32,7 @@ export default function TeamSection() {
     'w-5 h-5 cursor-pointer text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors';
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-16 select-none">
+    <section className="max-w-7xl min-h-[90vh] mx-auto px-6 py-16 select-none">
       <div className="flex flex-col md:flex-row items-center md:items-start gap-10 md:gap-20">
         {/* Left Text Content */}
         <motion.div
@@ -47,18 +47,18 @@ export default function TeamSection() {
           <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-sm">
             Effective teams communicate openly, leverage strengths, and embrace diversity for success.
           </p>
-          <button
+          {/* <button
             type="button"
             className="mt-8 bg-blue-600 text-white rounded-full px-6 py-3 text-sm font-medium
             hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
           >
             Join Our Team
-          </button>
+          </button> */}
         </motion.div>
 
         {/* Team Cards */}
         <div className="flex flex-1 gap-8 md:gap-10">
-          {team.map(({ name, role, emoji, bg, text }) => (
+          {team.map(({ name, role, image, bg, text }) => (
             <motion.div
               key={name}
               initial={{ opacity: 0, y: 30 }}
@@ -67,10 +67,10 @@ export default function TeamSection() {
               className={`${bg} rounded-2xl p-6 flex flex-col items-center min-w-[180px]`}
             >
               <div
-                className="bg-white rounded-xl p-6 mb-6 flex items-center justify-center text-5xl"
+                className=" rounded-xl mb-6 flex items-center justify-center text-5xl"
                 aria-label={name}
               >
-                {emoji}
+                <img src={image} alt={name} className='w-32 h-32 rounded-lg' />
               </div>
               <h3 className={`font-semibold ${text} text-center`}>{name}</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{role}</p>

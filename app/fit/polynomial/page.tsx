@@ -1,7 +1,6 @@
-/* --- File: app/fit/polynomial/page.tsx --- */
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -14,17 +13,46 @@ import {
 } from 'chart.js';
 import { inv, multiply, transpose } from 'mathjs';
 import domtoimage from 'dom-to-image';
+import { X } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
-function polyFit(points: [number, number][], degree: number): number[] {
-  const X = points.map(([x]) => Array.from({ length: degree + 1 }, (_, i) => x ** i));
-  const Y = points.map(([, y]) => [y]);
-  const Xt = transpose(X);
-  const XtX = multiply(Xt, X);
-  const XtY = multiply(Xt, Y);
-  const coeffs = multiply(inv(XtX), XtY);
-  return coeffs.map(c => c[0]);
+function polyFit(points: [number, number][], degree: number): { coeffs: number[] | null; error: string | null } {
+  if (points.length === 0) {
+    return { coeffs: null, error: "No data points provided." };
+  }
+  if (degree < 1) {
+    return { coeffs: null, error: "Degree must be at least 1." };
+  }
+  if (degree >= points.length) {
+    return { coeffs: null, error: "Degree must be less than number of points." };
+  }
+
+  try {
+    const X = points.map(([x]) => Array.from({ length: degree + 1 }, (_, i) => x ** i));
+    const Y = points.map(([, y]) => [y]);
+    const Xt = transpose(X);
+    const XtX = multiply(Xt, X);
+
+    // Check if XtX is invertible by determinant (optional, but mathjs doesn't have det for matrices, so catch error instead)
+    // Alternatively, try-catch covers inversion failure.
+
+    const XtY = multiply(Xt, Y);
+    const coeffsMatrix = multiply(inv(XtX), XtY);
+    const coeffs = coeffsMatrix.map(c => c[0]);
+    return { coeffs, error: null };
+  } catch (e: any) {
+    return { coeffs: null, error: e?.message || "An unknown error occurred in polynomial fitting." };
+  }
 }
 
 function evaluatePoly(coeffs: number[], x: number): number {
@@ -50,121 +78,246 @@ export default function PolynomialFitPage() {
     [3, 10],
   ]);
   const [degree, setDegree] = useState(2);
+  const [xVal, setXVal] = useState('');
+  const [yVal, setYVal] = useState('');
+  const [error, setError] = useState('');
 
-  const handlePointChange = (i: number, x: number, y: number) => {
-    const updated = [...points];
-    updated[i] = [x, y];
-    setPoints(updated);
-  };
-
-  const addPoint = () => setPoints([...points, [0, 0]]);
-  const removePoint = (i: number) => setPoints(points.filter((_, idx) => idx !== i));
-
-  const coeffs = polyFit(points, degree);
-  const { rmse, r2 } = getErrorMetrics(points, coeffs);
+  const coeffsResult = polyFit(points, degree);
+  const { coeffs, error: fitError } = coeffsResult;
+  const { rmse, r2 } = coeffs ? getErrorMetrics(points, coeffs) : { rmse: 0, r2: 0 };
   const xVals = points.map(p => p[0]);
   const minX = Math.min(...xVals);
   const maxX = Math.max(...xVals);
   const fitX = Array.from({ length: 100 }, (_, i) => minX + (i * (maxX - minX)) / 99);
-  const fitY = fitX.map(x => evaluatePoly(coeffs, x));
+  const fitY = coeffs ? fitX.map(x => evaluatePoly(coeffs, x)) : [];
 
-    const downloadPlot = async () => {
-        const chartCanvas = document.querySelector('canvas');
-        if (!chartCanvas) return;
+    useEffect(() => {
+    setError(fitError || '');
+    console.log('fitError', fitError);
+  }, [fitError]);
 
-        try {
-            const dataUrl = await domtoimage.toPng(chartCanvas as HTMLElement);
-            const link = document.createElement('a');
-            link.download = 'polynomial-fit-plot.png';
-            link.href = dataUrl;
-            link.click();
-        } catch (error) {
-            console.error('Download failed:', error);
-        }
-    };
+
+
+  const handleAddPoint = () => {
+    const x = parseFloat(xVal);
+    const y = parseFloat(yVal);
+    if (!isNaN(x) && !isNaN(y)) {
+      setPoints([...points, [x, y]]);
+      setXVal('');
+      setYVal('');
+    }
+  };
+
+  const removePoint = (i: number) => setPoints(points.filter((_, idx) => idx !== i));
+
+  const downloadPlot = async () => {
+    const chartCanvas = document.querySelector('canvas');
+    if (!chartCanvas) return;
+    try {
+      const dataUrl = await domtoimage.toPng(chartCanvas as HTMLElement);
+      const link = document.createElement('a');
+      link.download = 'polynomial-fit-plot.png';
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Polynomial Curve Fit</h1>
-
-      <div className="mb-4">
-        <label className="mr-2">Degree:</label>
-        <input
-          type="number"
-          min={1}
-          max={10}
-          value={degree}
-          onChange={e => setDegree(Number(e.target.value))}
-          className="border px-2 py-1 rounded w-20"
-        />
+    <main className="p-8 max-w-5xl mx-auto space-y-6">
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl font-extrabold tracking-tight text-primary sm:text-5xl">
+          Polynomial Curve Fit
+        </h1>
+        <p className="text-muted-foreground max-w-xl mx-auto">
+          Enter your data points and select the polynomial degree to fit and visualize the curve.
+        </p>
       </div>
 
-      <table className="w-full mb-4">
-        <thead>
-          <tr><th>X</th><th>Y</th><th></th></tr>
-        </thead>
-        <tbody>
-          {points.map(([x, y], i) => (
-            <tr key={i}>
-              <td><input type="number" value={x} onChange={e => handlePointChange(i, +e.target.value, y)} /></td>
-              <td><input type="number" value={y} onChange={e => handlePointChange(i, x, +e.target.value)} /></td>
-              <td><button onClick={() => removePoint(i)} className="text-red-500">Remove</button></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <button onClick={addPoint} className="bg-blue-500 text-white px-4 py-2 rounded">Add Point</button>
+      <Card className="border-dashed border-2 border-border bg-background">
+        <CardHeader>
+          <CardTitle className="text-xl text-center">Add Data Points</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className='flex items-center justify-center gap-4 mb-4'>
+            <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
+              <Input
+                type="text"
+                value={xVal}
+                onChange={(e) => setXVal(e.target.value)}
+                placeholder="X value"
+                className="sm:w-40"
+              />
+              <Input
+                type="text"
+                value={yVal}
+                onChange={(e) => setYVal(e.target.value)}
+                placeholder="Y value"
+                className="sm:w-40"
+              />
+              <Button onClick={handleAddPoint} className="px-6">
+                Add
+              </Button>
+            </div>
+            <div className='flex items-center gap-2'>
+              <Label>Degree</Label>
+              <Input
+                type="number"
+                min={1}
+                max={10}
+                placeholder='Degree'
+                value={degree}
+                onChange={e => setDegree(Number(e.target.value))}
+                className="w-32"
+              />
+            </div>
+          </div>
 
-      <h2 className="mt-6 mb-2 text-lg">Fitted Equation</h2>
-      <p className="font-mono whitespace-pre-wrap">
-        y = {
-          coeffs.map((c, i) => `${c.toFixed(2)}x^${i}`).join(' + ')
-        }
-      </p>
+          {points.length > 0 && (
+            <div className="flex flex-wrap gap-3 justify-center">
+              {points.map(([x, y], idx) => (
+                <div
+                  key={idx}
+                  className="relative bg-accent text-accent-foreground rounded-xl px-4 py-2 shadow flex items-center text-sm font-mono border border-border"
+                >
+                  <button
+                    onClick={() => removePoint(idx)}
+                    className="absolute -top-2 -left-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center hover:opacity-80"
+                  >
+                    <X size={12} />
+                  </button>
+                  ({x}, {y})
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      {
+        fitError && (
+          <Card className="border-dashed bg-background border-destructive">
+            <CardContent>
+              <p className="font-mono text-sm select-text">{fitError}</p>
+            </CardContent>
+          </Card>
+        )
+      }
 
-      <h3 className="mt-4">Error Metrics</h3>
-      <ul className="list-disc pl-6">
-        <li>RMSE: {rmse.toFixed(4)}</li>
-        <li>R²: {r2.toFixed(4)}</li>
-      </ul>
+      {/* <Card className="border border-border">
+        <CardHeader>
+          <CardTitle className="text-lg">Polynomial Degree</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Input
+            type="number"
+            min={1}
+            max={10}
+            value={degree}
+            onChange={e => setDegree(Number(e.target.value))}
+            className="w-32"
+          />
+        </CardContent>
+      </Card> */}
 
-      <div className="mt-6">
-        <Line
-          data={{
-            labels: fitX,
-            datasets: [
-              {
-                label: 'Data Points',
-                data: points.map(([x, y]) => ({ x, y })),
-                borderColor: 'rgba(75,192,192,1)',
-                backgroundColor: 'rgba(75,192,192,0.4)',
-                showLine: false,
-              },
-              {
-                label: 'Fitted Curve',
-                data: fitX.map((x, i) => ({ x, y: fitY[i] })),
-                borderColor: 'rgba(255,99,132,1)',
-                backgroundColor: 'rgba(255,99,132,0.4)',
-                fill: false,
-              },
-            ],
-          }}
-          options={{
-            responsive: true,
-            scales: {
-              x: { type: 'linear', position: 'bottom' },
-              y: { beginAtZero: true },
-            },
-          }}
-        />
+      <div className="grid sm:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Fitted Equation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-mono text-sm select-text">
+              y = {coeffs ? coeffs.map((c, i) => `${c.toFixed(2)}x^${i}`).join(' + ') : 'N/A'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Error Metrics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc pl-6 space-y-1 text-sm">
+              <li><b>RMSE:</b> {rmse.toFixed(4)}</li>
+              <li><b>R²:</b> {r2.toFixed(4)}</li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
 
-      <button
-        onClick={downloadPlot}
-        className="mt-4 bg-green-600 text-white px-4 py-2 rounded"
-      >
-        Download Plot
-      </button>
+      <Card>
+        <CardHeader>
+          <CardTitle>Visualization</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Line
+            data={{
+              labels: xVals,
+              datasets: [
+                {
+                  label: 'Data Points',
+                  data: points.map(([x, y]) => ({ x, y })),
+                  borderColor: 'rgba(14, 165, 233, 1)',
+                  backgroundColor: 'rgba(14, 165, 233, 0.4)',
+                  pointRadius: 6,
+                  showLine: false,
+                },
+                {
+                  label: 'Fitted Curve',
+                  data: fitX.map((x, i) => ({ x, y: fitY[i] })),
+                  borderColor: 'rgba(234, 88, 12, 1)',
+                  borderWidth: 3,
+                  fill: false,
+                  tension: 0.2,
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              interaction: {
+                mode: 'nearest',
+                intersect: false,
+              },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    color: '#374151',
+                    font: { weight: 'bold' },
+                  },
+                },
+                tooltip: {
+                  enabled: true,
+                  backgroundColor: 'rgba(0,0,0,0.8)',
+                  titleColor: '#fff',
+                  bodyColor: '#ddd',
+                  cornerRadius: 4,
+                  padding: 8,
+                },
+              },
+              scales: {
+                x: {
+                  type: 'linear',
+                  position: 'bottom',
+                  grid: { color: '#e5e7eb' },
+                  ticks: { color: '#6b7280' },
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: { color: '#e5e7eb' },
+                  ticks: { color: '#6b7280' },
+                },
+              },
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="text-center">
+        <Button onClick={downloadPlot} className="mt-4">
+          Download Plot
+        </Button>
+      </div>
     </main>
   );
 }

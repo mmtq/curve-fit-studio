@@ -1,24 +1,40 @@
-/* --- File: app/fit/power/page.tsx --- */
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
-    Chart as ChartJS,
-    LineElement,
-    PointElement,
-    LinearScale,
-    Title,
-    Tooltip,
-    Legend,
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  Title,
+  Tooltip,
+  Legend,
 } from 'chart.js';
 import domtoimage from 'dom-to-image';
-
+import { X } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
-function powerFit(points: [number, number][]): [number, number] {
-    const filtered = points.filter(([x, y]) => x > 0 && y > 0);
+function powerFit(points: [number, number][]): { params: [number, number] | null; error: string | null } {
+  const filtered = points.filter(([x, y]) => x > 0 && y > 0);
+
+  if (filtered.length === 0) {
+    return { params: null, error: "No points with positive x and y for power fit." };
+  }
+  if (filtered.length < 2) {
+    return { params: null, error: "At least two valid points are required." };
+  }
+
+  try {
     const n = filtered.length;
     const sumLnX = filtered.reduce((acc, [x]) => acc + Math.log(x), 0);
     const sumLnY = filtered.reduce((acc, [, y]) => acc + Math.log(y), 0);
@@ -26,136 +42,256 @@ function powerFit(points: [number, number][]): [number, number] {
     const sumLnX2 = filtered.reduce((acc, [x]) => acc + Math.log(x) ** 2, 0);
 
     const denominator = n * sumLnX2 - sumLnX ** 2;
+    if (denominator === 0) {
+      return { params: null, error: "Denominator is zero, can't compute fit (check data points)." };
+    }
+
     const a = (sumLnY * sumLnX2 - sumLnX * sumLnXLnY) / denominator;
     const b = (n * sumLnXLnY - sumLnX * sumLnY) / denominator;
 
     const A = Math.exp(a);
-    return [A, b];
+
+    if (!isFinite(A) || !isFinite(b)) {
+      return { params: null, error: "Computed parameters are not finite numbers." };
+    }
+
+    return { params: [A, b], error: null };
+  } catch (e: any) {
+    return { params: null, error: e?.message || "Unknown error during power fitting." };
+  }
 }
 
 function evaluatePower([A, b]: [number, number], x: number): number {
-    return A * x ** b;
+  return A * x ** b;
 }
 
 function getErrorMetrics(points: [number, number][], params: [number, number]) {
-    const residuals = points.map(([x, y]) => y - evaluatePower(params, x));
-    const n = points.length;
-    const mse = residuals.reduce((acc, r) => acc + r ** 2, 0) / n;
-    const rmse = Math.sqrt(mse);
-    const yMean = points.reduce((acc, [, y]) => acc + y, 0) / n;
-    const ssTot = points.reduce((acc, [, y]) => acc + (y - yMean) ** 2, 0);
-    const ssRes = residuals.reduce((acc, r) => acc + r ** 2, 0);
-    const r2 = 1 - ssRes / ssTot;
-    return { rmse, r2 };
+  const residuals = points.map(([x, y]) => y - evaluatePower(params, x));
+  const n = points.length;
+  const mse = residuals.reduce((acc, r) => acc + r ** 2, 0) / n;
+  const rmse = Math.sqrt(mse);
+  const yMean = points.reduce((acc, [, y]) => acc + y, 0) / n;
+  const ssTot = points.reduce((acc, [, y]) => acc + (y - yMean) ** 2, 0);
+  const ssRes = residuals.reduce((acc, r) => acc + r ** 2, 0);
+  const r2 = 1 - ssRes / ssTot;
+  return { rmse, r2 };
 }
 
 export default function PowerFitPage() {
-    const [points, setPoints] = useState<[number, number][]>([
-        [1, 2],
-        [2, 4.1],
-        [3, 7.5],
-    ]);
+  const [points, setPoints] = useState<[number, number][]>([
+    [1, 2],
+    [2, 4.1],
+    [3, 7.5],
+  ]);
+  const [xVal, setXVal] = useState('');
+  const [yVal, setYVal] = useState('');
+  const chartRef = useRef(null);
 
-    const handlePointChange = (i: number, x: number, y: number) => {
-        const updated = [...points];
-        updated[i] = [x, y];
-        setPoints(updated);
-    };
+  const handleAddPoint = () => {
+    const x = parseFloat(xVal);
+    const y = parseFloat(yVal);
+    if (!isNaN(x) && !isNaN(y)) {
+      setPoints([...points, [x, y]]);
+      setXVal('');
+      setYVal('');
+    }
+  };
 
-    const addPoint = () => setPoints([...points, [0, 0]]);
-    const removePoint = (i: number) => setPoints(points.filter((_, idx) => idx !== i));
+  const removePoint = (i: number) => setPoints(points.filter((_, idx) => idx !== i));
 
-    const params = powerFit(points);
-    const { rmse, r2 } = getErrorMetrics(points, params);
-    const xVals = points.map(p => p[0]);
-    const minX = Math.min(...xVals);
-    const maxX = Math.max(...xVals);
-    const fitX = Array.from({ length: 100 }, (_, i) => minX + (i * (maxX - minX)) / 99);
-    const fitY = fitX.map(x => evaluatePower(params, x));
+  const { params, error: fitError } = powerFit(points);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    setError(fitError);
+  }, [fitError]);
 
-    const downloadPlot = async () => {
-        const chartCanvas = document.querySelector('canvas');
-        if (!chartCanvas) return;
+  const xVals = points.map(p => p[0]);
+  const minX = Math.min(...xVals);
+  const maxX = Math.max(...xVals);
+  const fitX = Array.from({ length: 100 }, (_, i) => minX + (i * (maxX - minX)) / 99);
+  const fitY = params ? fitX.map(x => evaluatePower(params, x)) : [];
 
-        try {
-            const dataUrl = await domtoimage.toPng(chartCanvas as HTMLElement);
-            const link = document.createElement('a');
-            link.download = 'power-fit-plot.png';
-            link.href = dataUrl;
-            link.click();
-        } catch (error) {
-            console.error('Download failed:', error);
-        }
-    };
+  const { rmse, r2 } = params ? getErrorMetrics(points, params) : { rmse: NaN, r2: NaN };
+  const downloadPlot = async () => {
+    const chartCanvas = document.querySelector('canvas');
+    if (!chartCanvas) return;
+    try {
+      const dataUrl = await domtoimage.toPng(chartCanvas as HTMLElement);
+      const link = document.createElement('a');
+      link.download = 'power-fit-plot.png';
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
 
-    return (
-        <main className="p-6 max-w-3xl mx-auto">
-            <h1 className="text-2xl font-semibold mb-4">Power Curve Fit</h1>
+  return (
+    <main className="p-8 max-w-5xl mx-auto space-y-10">
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl font-extrabold tracking-tight text-primary sm:text-5xl">
+          Power Curve Fit
+        </h1>
+        <p className="text-muted-foreground max-w-xl mx-auto">
+          Enter your data points below to visualize and evaluate a power regression fit.
+        </p>
+      </div>
 
-            <table className="w-full mb-4">
-                <thead>
-                    <tr><th>X</th><th>Y</th><th></th></tr>
-                </thead>
-                <tbody>
-                    {points.map(([x, y], i) => (
-                        <tr key={i}>
-                            <td><input type="number" value={x} onChange={e => handlePointChange(i, +e.target.value, y)} /></td>
-                            <td><input type="number" value={y} onChange={e => handlePointChange(i, x, +e.target.value)} /></td>
-                            <td><button onClick={() => removePoint(i)} className="text-red-500">Remove</button></td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            <button onClick={addPoint} className="bg-blue-500 text-white px-4 py-2 rounded">Add Point</button>
+      <Card className="border-dashed border-2 border-border bg-background">
+        <CardHeader>
+          <CardTitle className="text-xl text-center">Add Data Points</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col justify-center sm:flex-row gap-3 items-center mb-4">
+            <Input
+              type="text"
+              value={xVal}
+              onChange={(e) => setXVal(e.target.value)}
+              placeholder="X value"
+              className="sm:w-40"
+            />
+            <Input
+              type="text"
+              value={yVal}
+              onChange={(e) => setYVal(e.target.value)}
+              placeholder="Y value"
+              className="sm:w-40"
+            />
+            <Button onClick={handleAddPoint} className="px-6">
+              Add
+            </Button>
+          </div>
 
-            <h2 className="mt-6 mb-2 text-lg">Fitted Equation</h2>
-            <p className="font-mono whitespace-pre-wrap">
-                y = {params[0].toFixed(3)} * x^{params[1].toFixed(3)}
-            </p>
-
-            <h3 className="mt-4">Error Metrics</h3>
-            <ul className="list-disc pl-6">
-                <li>RMSE: {rmse.toFixed(4)}</li>
-                <li>R²: {r2.toFixed(4)}</li>
-            </ul>
-
-            <div className="mt-6">
-                <Line
-                    data={{
-                        labels: fitX,
-                        datasets: [
-                            {
-                                label: 'Data Points',
-                                data: points.map(([x, y]) => ({ x, y })),
-                                borderColor: 'rgba(75,192,192,1)',
-                                backgroundColor: 'rgba(75,192,192,0.4)',
-                                showLine: false,
-                            },
-                            {
-                                label: 'Fitted Curve',
-                                data: fitX.map((x, i) => ({ x, y: fitY[i] })),
-                                borderColor: 'rgba(255,99,132,1)',
-                                backgroundColor: 'rgba(255,99,132,0.4)',
-                                fill: false,
-                            },
-                        ],
-                    }}
-                    options={{
-                        responsive: true,
-                        scales: {
-                            x: { type: 'linear', position: 'bottom' },
-                            y: { beginAtZero: true },
-                        },
-                    }}
-                />
+          {points.length > 0 && (
+            <div className="flex flex-wrap gap-3 justify-center">
+              {points.map(([x, y], idx) => (
+                <div
+                  key={idx}
+                  className="relative bg-accent text-accent-foreground rounded-xl px-4 py-2 shadow flex items-center text-sm font-mono border border-border"
+                >
+                  <button
+                    onClick={() => removePoint(idx)}
+                    className="absolute -top-2 -left-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center hover:opacity-80"
+                  >
+                    <X size={12} />
+                  </button>
+                  ({x}, {y})
+                </div>
+              ))}
             </div>
+          )}
+        </CardContent>
+      </Card>
 
-            <button
-                onClick={downloadPlot}
-                className="mt-4 bg-green-600 text-white px-4 py-2 rounded"
-            >
-                Download Plot
-            </button>
-        </main>
-    );
+      {
+        fitError && (
+          <Card className="border-dashed bg-background border-destructive">
+            <CardContent>
+              <p className="font-mono text-sm select-text">{fitError}</p>
+            </CardContent>
+          </Card>
+        )
+      }
+
+      <div className="grid sm:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Fitted Equation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-mono text-lg select-text">
+              y = {params?.[0].toFixed(3)} * x^{params?.[1].toFixed(3)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Error Metrics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc pl-6 space-y-1 text-sm">
+              <li><b>RMSE:</b> {rmse.toFixed(4)}</li>
+              <li><b>R²:</b> {r2.toFixed(4)}</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Visualization</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Line
+            ref={chartRef}
+            data={{
+              labels: fitX,
+              datasets: [
+                {
+                  label: 'Data Points',
+                  data: points.map(([x, y]) => ({ x, y })),
+                  borderColor: 'rgba(14, 165, 233, 1)',
+                  backgroundColor: 'rgba(14, 165, 233, 0.4)',
+                  pointRadius: 6,
+                  showLine: false,
+                },
+                {
+                  label: 'Fitted Curve',
+                  data: fitX.map((x, i) => ({ x, y: fitY[i] })),
+                  borderColor: 'rgba(234, 88, 12, 1)',
+                  borderWidth: 3,
+                  fill: false,
+                  tension: 0.2,
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              interaction: {
+                mode: 'nearest',
+                intersect: false,
+              },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: {
+                    color: '#374151',
+                    font: { weight: 'bold' },
+                  },
+                },
+                tooltip: {
+                  enabled: true,
+                  backgroundColor: 'rgba(0,0,0,0.8)',
+                  titleColor: '#fff',
+                  bodyColor: '#ddd',
+                  cornerRadius: 4,
+                  padding: 8,
+                },
+              },
+              scales: {
+                x: {
+                  type: 'linear',
+                  position: 'bottom',
+                  grid: { color: '#e5e7eb' },
+                  ticks: { color: '#6b7280' },
+                },
+                y: {
+                  beginAtZero: true,
+                  grid: { color: '#e5e7eb' },
+                  ticks: { color: '#6b7280' },
+                },
+              },
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="text-center">
+        <Button onClick={downloadPlot} className="mt-4">
+          Download Plot
+        </Button>
+      </div>
+    </main>
+  );
 }

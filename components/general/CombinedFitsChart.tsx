@@ -11,7 +11,7 @@ import {
   Filler,
   CategoryScale,
 } from 'chart.js';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
 
 ChartJS.register(
@@ -38,10 +38,12 @@ interface Props {
 
 export default function CombinedFitsChart({ points, fits }: Props) {
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // ✅ Move useMemo ABOVE conditional return
   const data = useMemo(() => {
     const datasets = [
       {
@@ -55,10 +57,10 @@ export default function CombinedFitsChart({ points, fits }: Props) {
       },
       ...fits
         .filter(f => f.visible && f.fitX.length === f.fitY.length)
-        .map(f => ({
-          label: `${f.name} Fit`,
-          data: f.fitX.map((x, i) => ({ x, y: f.fitY[i] })),
-          borderColor: f.color,
+        .map(fit => ({
+          label: `${fit.name} Fit`,
+          data: fit.fitX.map((x, i) => ({ x, y: fit.fitY[i] })),
+          borderColor: fit.color,
           borderWidth: 2,
           tension: 0.25,
           fill: false,
@@ -69,7 +71,7 @@ export default function CombinedFitsChart({ points, fits }: Props) {
     return { datasets };
   }, [points, fits]);
 
-  const options = {
+  const options = useMemo(() => ({
     responsive: true,
     plugins: {
       legend: { position: 'top' as const },
@@ -95,12 +97,9 @@ export default function CombinedFitsChart({ points, fits }: Props) {
         },
       },
     },
-  };
+  }), []);
 
-  if (!mounted) {
-    return null;
-  }
-
+  if (!mounted) return null;
 
   return <Line data={data} options={options} />;
 }

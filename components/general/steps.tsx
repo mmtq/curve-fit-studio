@@ -4,11 +4,6 @@ import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Home, Settings2, PlusCircle, LineChart, Download } from "lucide-react"
 
-
-interface Props {
-
-}
-
 const steps = [
   {
     title: "Go to Home Page",
@@ -37,7 +32,7 @@ const steps = [
   },
 ]
 
-const Steps = ({ }: Props) => {
+const Steps = () => {
     return (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {steps.map((step, idx) => {

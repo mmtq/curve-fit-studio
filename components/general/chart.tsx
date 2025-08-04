@@ -10,7 +10,7 @@ interface Props {
 
 const Chart = ({ fitX, fitY, points }: Props) => {
     return (
-        <Line
+        <Line className="w-full"
             // ref={chartRef}
             data={{
                 labels: fitX,

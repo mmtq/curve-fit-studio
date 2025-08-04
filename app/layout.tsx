@@ -4,6 +4,7 @@ import "./globals.css";
 import NavBar from "@/components/general/navbar";
 import { Footer } from "@/components/general/footer";
 import 'katex/dist/katex.min.css';
+import { InputPointsProvider } from "@/providers/InputPointsContext";
 
 
 const geistSans = Geist({
@@ -31,9 +32,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased p-2`}
       >
+        <InputPointsProvider>
         <NavBar />
         {children}
         <Footer />
+        </InputPointsProvider>
       </body>
     </html>
   );

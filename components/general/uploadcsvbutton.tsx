@@ -1,30 +1,50 @@
-'use client'
+import { useRef } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { UploadCloud } from 'lucide-react';
 
-import { useRef, useTransition } from 'react'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { UploadCloud } from 'lucide-react'
-import { uploadCsv } from '@/actions/uploadcsv'
+interface CSVUploaderProps {
+  onPoints: (points: [number, number][]) => void;
+}
 
-export default function CSVUploader({
-  onPoints,
-}: {
-  onPoints: (pts: [number, number][]) => void
-}) {
-  const [isPending, startTransition] = useTransition()
-  const formRef = useRef<HTMLFormElement>(null)
+export default function CSVUploader({ onPoints }: CSVUploaderProps) {
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const handleUpload = async (formData: FormData) => {
-    startTransition(async () => {
-      const points = await uploadCsv(formData)
-      console.log('points', points)
-      onPoints(points)
-      formRef.current?.reset()
-    })
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result as string;
+        const lines = text.split('\n');
+        const result: [number, number][] = [];
+
+        for (const line of lines) {
+          const [xStr, yStr] = line.trim().split(','); // assuming x,y with header
+          const x = parseFloat(xStr);
+          const y = parseFloat(yStr);
+          if (!isNaN(x) && !isNaN(y)) result.push([x, y]);
+        }
+
+        // If first line is header, skip it
+        if (typeof lines[0] === 'string' && lines[0].toLowerCase().includes('x')) {
+          result.shift(); // remove the header row
+        }
+
+        onPoints(result);
+      };
+
+      reader.readAsText(file);
+
+    } catch (error) {
+      console.error('Error reading CSV file:', error);
+    }
   }
 
   return (
-    <form action={handleUpload} ref={formRef} className="space-y-2">
+    <form ref={formRef} className="border border-dotted border-muted-foreground/10 p-2 rounded">
       <Label htmlFor="csv-upload" className="flex items-center gap-2 cursor-pointer">
         <UploadCloud className="w-5 h-5" />
         Upload CSV File
@@ -34,9 +54,9 @@ export default function CSVUploader({
         name="file"
         id="csv-upload"
         accept=".csv"
-        className="cursor-pointer"
-        disabled={isPending}
+        className="cursor-pointer hidden"
+        onChange={handleFileChange}
       />
     </form>
-  )
+  );
 }

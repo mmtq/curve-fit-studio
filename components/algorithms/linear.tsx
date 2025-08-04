@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import {
   Chart as ChartJS,
   LineElement,
@@ -10,8 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import domtoimage from 'dom-to-image';
-import { Download, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -22,49 +21,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Chart from '@/components/general/chart';
 import { GetCode } from '@/components/general/get-code';
-import { linearFit } from '@/actions/fit-action';
 import CSVUploader from '../general/uploadcsvbutton';
+import { DownloadChartButton } from '../general/download-chart-button';
+import { useInputPoints } from '@/providers/InputPointsContext';
+import { linearFit } from '@/actions/algorithm-action';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
 
 export default function LinearFitCard() {
-  const [points, setPoints] = useState<[number, number][]>([
-    [1, 2],
-    [2, 3],
-    [3, 5],
-  ]);
-  const [xVal, setXVal] = useState<string>('');
-  const [yVal, setYVal] = useState<string>('');
+  const { points, setPoints } = useInputPoints();
+
+  const [xVal, setXVal] = useState('');
+  const [yVal, setYVal] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const removePoint = (i: number) => setPoints(points.filter((_, idx) => idx !== i));
 
-  const { slope, intercept, rmse, r2, error: fitError } = linearFit(points);
+  const { fitX, fitY, rmse, r2, error: fitError, equation } = linearFit(points);
 
   useEffect(() => {
     setError(fitError);
   }, [fitError]);
-
-  const xVals = points.map(p => p[0]);
-  const minX = Math.min(...xVals);
-  const maxX = Math.max(...xVals);
-  const fitX = [minX, maxX];
-  const fitY = (!isNaN(slope) && !isNaN(intercept)) ? fitX.map(x => slope * x + intercept) : [];
-
-  const downloadPlot = async () => {
-    const chartCanvas = document.querySelector('canvas');
-    if (!chartCanvas) return;
-    try {
-      const dataUrl = await domtoimage.toPng(chartCanvas as HTMLElement);
-      const link = document.createElement('a');
-      link.download = 'linear-fit-plot.png';
-      link.href = dataUrl;
-      link.click();
-    } catch (error) {
-      console.error('Download failed:', error);
-    }
-  };
 
   const handleAddPoint = () => {
     const x = parseFloat(xVal);
@@ -75,6 +53,7 @@ export default function LinearFitCard() {
       setYVal('');
     }
   };
+
 
   return (
     <main className="p-8 max-w-5xl mx-auto space-y-10">
@@ -138,16 +117,14 @@ export default function LinearFitCard() {
         </CardContent>
       </Card>
 
-      {
-        fitError && (
-          <Card className="border-dashed bg-background border-destructive">
-            <CardContent>
-              <p className="font-mono text-sm select-text">{fitError}</p>
-            </CardContent>
-          </Card>
-        )
+      {error && (
+        <Card className="border-dashed bg-background border-destructive">
+          <CardContent>
+            <p className="font-mono text-sm select-text">{error}</p>
+          </CardContent>
+        </Card>
+      )}
 
-      }
 
       <div className="grid sm:grid-cols-2 gap-6">
         <Card>
@@ -155,12 +132,9 @@ export default function LinearFitCard() {
             <CardTitle>Fitted Equation</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-mono text-lg select-text">
-              y = {isNaN(slope) ? 'NaN' : slope.toFixed(3)}x + {isNaN(intercept) ? 'NaN' : intercept.toFixed(3)}
-            </p>
+            <p className="font-mono text-lg select-text">{equation || 'No valid fit'}</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader>
             <CardTitle>Error Metrics</CardTitle>
@@ -177,24 +151,17 @@ export default function LinearFitCard() {
       <Card>
         <CardHeader>
           <CardTitle>
-            <div className='flex items-center justify-between'>
+            <div className="flex items-center justify-between">
               <div>Visualization</div>
-              <div className='flex items-center gap-2'>
-                <Button onClick={downloadPlot} variant={'outline'}>
-                  <Download /> Download Plot
-                </Button>
-                <GetCode points={points} name='linear' />
+              <div className="flex items-center gap-2">
+                <DownloadChartButton selector="canvas" filename="linear-fit-plot.png" />
+                <GetCode points={points} name="linear" />
               </div>
             </div>
           </CardTitle>
-
         </CardHeader>
         <CardContent className="relative">
-          <Chart
-            fitX={fitX}
-            fitY={fitY}
-            points={points}
-          />
+          <Chart fitX={fitX} fitY={fitY} points={points} />
         </CardContent>
       </Card>
     </main>

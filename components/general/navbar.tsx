@@ -21,6 +21,7 @@ const navigationLinks = [
   { href: "/", label: "Home" },
   { href: "/#features", label: "Features" },
   { href: "/theory", label: "Theory" },
+  { href: "/fit/compare", label: "Compare" },
   { href: "/team", label: "Team" },
 ]
 

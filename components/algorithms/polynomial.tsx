@@ -1,18 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Papa from 'papaparse'
-import {
-    Chart as ChartJS,
-    LineElement,
-    PointElement,
-    LinearScale,
-    Title,
-    Tooltip,
-    Legend,
-} from 'chart.js';
-import domtoimage from 'dom-to-image';
-import { Download, UploadCloud, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import {
     Card,
     CardContent,
@@ -24,37 +13,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Chart from '@/components/general/chart';
 import { GetCode } from '@/components/general/get-code';
-import { evaluatePoly, getPolyErrorMetrics, polyFit } from '@/actions/fit-action';
 import CSVUploader from '../general/uploadcsvbutton';
-
-ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
+import { DownloadChartButton } from '../general/download-chart-button';
+import { useInputPoints } from '@/providers/InputPointsContext';
+import { polyFit } from '@/actions/algorithm-action';
 
 export default function PolynomialFitCard() {
-    const [points, setPoints] = useState<[number, number][]>([
-        [1, 2],
-        [2, 5],
-        [3, 10],
-    ]);
-    const [degree, setDegree] = useState(2);
+    const { points, setPoints } = useInputPoints();
     const [xVal, setXVal] = useState('');
     const [yVal, setYVal] = useState('');
-    const [error, setError] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
-    const coeffsResult = polyFit(points, degree);
-    const { coeffs, error: fitError } = coeffsResult;
-    const { rmse, r2 } = coeffs ? getPolyErrorMetrics(points, coeffs) : { rmse: 0, r2: 0 };
-    const xVals = points.map(p => p[0]);
-    const minX = Math.min(...xVals);
-    const maxX = Math.max(...xVals);
-    const fitX = Array.from({ length: 100 }, (_, i) => minX + (i * (maxX - minX)) / 99);
-    const fitY = coeffs ? fitX.map(x => evaluatePoly(coeffs, x)) : [];
+    const [degree, setDegree] = useState(2);
+
+    const { fitX, fitY, rmse, r2, error: fitError, equation } = polyFit(points, degree);
+
 
     useEffect(() => {
         setError(fitError || '');
         console.log('fitError', fitError);
     }, [fitError]);
-
-
 
     const handleAddPoint = () => {
         const x = parseFloat(xVal);
@@ -67,54 +45,6 @@ export default function PolynomialFitCard() {
     };
 
     const removePoint = (i: number) => setPoints(points.filter((_, idx) => idx !== i));
-
-    const downloadPlot = async () => {
-        const chartCanvas = document.querySelector('canvas');
-        if (!chartCanvas) return;
-        try {
-            const dataUrl = await domtoimage.toPng(chartCanvas as HTMLElement);
-            const link = document.createElement('a');
-            link.download = 'polynomial-fit-plot.png';
-            link.href = dataUrl;
-            link.click();
-        } catch (error) {
-            console.error('Download failed:', error);
-        }
-    };
-
-const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-            const raw = results.data as Record<string, unknown>[];
-            const parsed: [number, number][] = [];
-
-            for (const row of raw) {
-                const x = Number(row['x']);
-                const y = Number(row['y']);
-                if (!isNaN(x) && !isNaN(y)) {
-                    parsed.push([x, y]);
-                }
-            }
-
-            if (parsed.length === 0) {
-                setError("No valid numeric x, y values found in CSV.");
-            } else {
-                setError('');
-                setPoints(parsed);
-            }
-        },
-        error: (error) => {
-            console.error("CSV parsing failed:", error);
-            setError("Failed to parse CSV file.");
-        }
-    });
-};
-
 
     return (
         <main className="p-8 max-w-5xl mx-auto space-y-6">
@@ -191,15 +121,14 @@ const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
                     )}
                 </CardContent>
             </Card>
-            {
-                fitError && (
-                    <Card className="border-dashed bg-background border-destructive">
-                        <CardContent>
-                            <p className="font-mono text-sm select-text">{fitError}</p>
-                        </CardContent>
-                    </Card>
-                )
-            }
+            {error && (
+                <Card className="border-dashed bg-background border-destructive">
+                    <CardContent>
+                        <p className="font-mono text-sm select-text">{error}</p>
+                    </CardContent>
+                </Card>
+            )}
+
 
             <div className="grid sm:grid-cols-2 gap-6">
                 <Card>
@@ -207,20 +136,17 @@ const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
                         <CardTitle>Fitted Equation</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="font-mono text-sm select-text">
-                            y = {coeffs ? coeffs.map((c, i) => `${c.toFixed(2)}x^${i}`).join(' + ') : 'N/A'}
-                        </p>
+                        <p className="font-mono text-lg select-text">{equation || 'No valid fit'}</p>
                     </CardContent>
                 </Card>
-
                 <Card>
                     <CardHeader>
                         <CardTitle>Error Metrics</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ul className="list-disc pl-6 space-y-1 text-sm">
-                            <li><b>RMSE:</b> {rmse.toFixed(4)}</li>
-                            <li><b>R²:</b> {r2.toFixed(4)}</li>
+                            <li><b>RMSE:</b> {isNaN(rmse) ? 'NaN' : rmse.toFixed(4)}</li>
+                            <li><b>R²:</b> {isNaN(r2) ? 'NaN' : r2.toFixed(4)}</li>
                         </ul>
                     </CardContent>
                 </Card>
@@ -232,9 +158,7 @@ const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
                         <div className='flex items-center justify-between'>
                             <div>Visualization</div>
                             <div className='flex items-center gap-2'>
-                                <Button onClick={downloadPlot} variant={'outline'}>
-                                    <Download /> Download Plot
-                                </Button>
+                                <DownloadChartButton selector="canvas" filename="polynomial-fit-plot.png" />
                                 <GetCode points={points} name='polynomial' degree={degree} />
                             </div>
                         </div>

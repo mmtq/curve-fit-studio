@@ -42,10 +42,6 @@ export default function CombinedFitsChart({ points, fits }: Props) {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
-
   const data = useMemo(() => {
     const datasets = [
       {
@@ -100,6 +96,11 @@ export default function CombinedFitsChart({ points, fits }: Props) {
       },
     },
   };
+
+  if (!mounted) {
+    return null;
+  }
+
 
   return <Line data={data} options={options} />;
 }

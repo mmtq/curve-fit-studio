@@ -101,8 +101,9 @@ export default function CombinedFitsChart({ points, fits }: Props) {
 
   if (!mounted) return null;
 
-  <div className="w-full h-[300px]">
-    <Line data={data} options={options} />
-  </div>
-
+  return (
+    <div className="w-full h-[300px]">
+      <Line data={data} options={options} />
+    </div>
+  )
 }

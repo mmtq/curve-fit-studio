@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { GetCode } from '@/components/general/get-code';
 import Chart from '@/components/general/chart';
 import { evaluatePower, getPowerErrorMetrics, powerFit } from '@/actions/fit-action';
+import CSVUploader from '../general/uploadcsvbutton';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
@@ -91,23 +92,29 @@ export default function PowerFitCard() {
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col justify-center sm:flex-row gap-3 items-center mb-4">
-                        <Input
-                            type="text"
-                            value={xVal}
-                            onChange={(e) => setXVal(e.target.value)}
-                            placeholder="X value"
-                            className="sm:w-40"
-                        />
-                        <Input
-                            type="text"
-                            value={yVal}
-                            onChange={(e) => setYVal(e.target.value)}
-                            placeholder="Y value"
-                            className="sm:w-40"
-                        />
-                        <Button onClick={handleAddPoint} className="px-6">
-                            Add
-                        </Button>
+                                    <div className='flex items-center justify-items-end gap-4'>
+                                      <div className='flex gap-2'>
+                                        <Input
+                                          type="text"
+                                          value={xVal}
+                                          onChange={(e) => setXVal(e.target.value)}
+                                          placeholder="X value"
+                                          className="sm:w-40"
+                                        />
+                                        <Input
+                                          type="text"
+                                          value={yVal}
+                                          onChange={(e) => setYVal(e.target.value)}
+                                          placeholder="Y value"
+                                          className="sm:w-40"
+                                        />
+                                        <Button onClick={handleAddPoint} className="px-6">
+                                          Add
+                                        </Button>
+                                      </div>
+                                      <CSVUploader onPoints={(newPoints) => setPoints(newPoints)} />
+                                    </div>
+                        
                     </div>
 
                     {points.length > 0 && (

@@ -49,9 +49,6 @@ export function polyFit(points: [number, number][], degree: number): { coeffs: n
     const Xt = transpose(X);
     const XtX = multiply(Xt, X);
 
-    // Check if XtX is invertible by determinant (optional, but mathjs doesn't have det for matrices, so catch error instead)
-    // Alternatively, try-catch covers inversion failure.
-
     const XtY = multiply(Xt, Y);
     const coeffsMatrix = multiply(inv(XtX), XtY);
     const coeffs = coeffsMatrix.map(c => c[0]);

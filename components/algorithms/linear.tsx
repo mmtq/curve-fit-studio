@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import Chart from '@/components/general/chart';
 import { GetCode } from '@/components/general/get-code';
 import { linearFit } from '@/actions/fit-action';
+import CSVUploader from '../general/uploadcsvbutton';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
@@ -92,23 +93,28 @@ export default function LinearFitCard() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-center mb-4">
-            <Input
-              type="text"
-              value={xVal}
-              onChange={(e) => setXVal(e.target.value)}
-              placeholder="X value"
-              className="sm:w-40"
-            />
-            <Input
-              type="text"
-              value={yVal}
-              onChange={(e) => setYVal(e.target.value)}
-              placeholder="Y value"
-              className="sm:w-40"
-            />
-            <Button onClick={handleAddPoint} className="px-6">
-              Add
-            </Button>
+            <div className='flex items-center justify-items-end gap-4'>
+              <div className='flex gap-2'>
+                <Input
+                  type="text"
+                  value={xVal}
+                  onChange={(e) => setXVal(e.target.value)}
+                  placeholder="X value"
+                  className="sm:w-40"
+                />
+                <Input
+                  type="text"
+                  value={yVal}
+                  onChange={(e) => setYVal(e.target.value)}
+                  placeholder="Y value"
+                  className="sm:w-40"
+                />
+                <Button onClick={handleAddPoint} className="px-6">
+                  Add
+                </Button>
+              </div>
+              <CSVUploader onPoints={(newPoints) => setPoints(newPoints)} />
+            </div>
           </div>
 
           {points.length > 0 && (

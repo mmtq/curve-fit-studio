@@ -281,7 +281,7 @@ export function FittingTheoryTabs() {
       className="w-full mt-6"
     >
       {/* Tabs List */}
-      <div className="sticky top-2 z-10 bg-background pb-2">
+      <div className="sticky top-19 z-10 bg-background pb-2">
         <TabsList className="grid grid-cols-5 justify-center w-full">
           {tabs.map((tab) => (
             <motion.div

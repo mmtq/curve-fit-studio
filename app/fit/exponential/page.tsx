@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     LineElement,
@@ -23,62 +22,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Chart from '@/components/general/chart';
 import { GetCode } from '@/components/general/get-code';
+import { evaluateExp, exponentialFit, getExpoErrorMetrics } from '@/actions/fit-action';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
-function exponentialFit(points: [number, number][]): { params: [number, number] | null; error: string | null } {
-    // Filter points with positive x and y, otherwise log error
-    const filtered = points.filter(([x, y]) => x > 0 && y > 0);
 
-    if (filtered.length === 0) {
-        return { params: null, error: "No points with positive x and y for exponential fit." };
-    }
-
-    if (filtered.length < 2) {
-        return { params: null, error: "At least two valid points are required." };
-    }
-
-    try {
-        const n = filtered.length;
-        const sumX = filtered.reduce((acc, [x]) => acc + x, 0);
-        const sumLnY = filtered.reduce((acc, [, y]) => acc + Math.log(y), 0);
-        const sumX2 = filtered.reduce((acc, [x]) => acc + x * x, 0);
-        const sumXLnY = filtered.reduce((acc, [x, y]) => acc + x * Math.log(y), 0);
-
-        const denominator = n * sumX2 - sumX ** 2;
-        if (denominator === 0) {
-            return { params: null, error: "Denominator is zero, can't compute fit (check data points)." };
-        }
-
-        const a = (sumLnY * sumX2 - sumX * sumXLnY) / denominator;
-        const b = (n * sumXLnY - sumX * sumLnY) / denominator;
-        const A = Math.exp(a);
-
-        if (!isFinite(A) || !isFinite(b)) {
-            return { params: null, error: "Computed parameters are not finite numbers." };
-        }
-
-        return { params: [A, b], error: null };
-    } catch (e: any) {
-        return { params: null, error: e?.message || "Unknown error during exponential fitting." };
-    }
-}
-
-function evaluateExp([A, b]: [number, number], x: number): number {
-    return A * Math.exp(b * x);
-}
-
-function getErrorMetrics(points: [number, number][], params: [number, number]) {
-    const residuals = points.map(([x, y]) => y - evaluateExp(params, x));
-    const n = points.length;
-    const mse = residuals.reduce((acc, r) => acc + r ** 2, 0) / n;
-    const rmse = Math.sqrt(mse);
-    const yMean = points.reduce((acc, [, y]) => acc + y, 0) / n;
-    const ssTot = points.reduce((acc, [, y]) => acc + (y - yMean) ** 2, 0);
-    const ssRes = residuals.reduce((acc, r) => acc + r ** 2, 0);
-    const r2 = 1 - ssRes / ssTot;
-    return { rmse, r2 };
-}
 
 export default function ExponentialFitPage() {
     const [points, setPoints] = useState<[number, number][]>([
@@ -103,7 +51,7 @@ export default function ExponentialFitPage() {
     const fitX = Array.from({ length: 100 }, (_, i) => minX + (i * (maxX - minX)) / 99);
     const fitY = params ? fitX.map(x => evaluateExp(params, x)) : [];
 
-    const { rmse, r2 } = params ? getErrorMetrics(points, params) : { rmse: NaN, r2: NaN };
+    const { rmse, r2 } = params ? getExpoErrorMetrics(points, params) : { rmse: NaN, r2: NaN };
 
     // Add new points handler
     const handleAddPoint = () => {

@@ -23,61 +23,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GetCode } from '@/components/general/get-code';
 import Chart from '@/components/general/chart';
+import { evaluatePower, getPowerErrorMetrics, powerFit } from '@/actions/fit-action';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
-function powerFit(points: [number, number][]): { params: [number, number] | null; error: string | null } {
-    const filtered = points.filter(([x, y]) => x > 0 && y > 0);
 
-    if (filtered.length === 0) {
-        return { params: null, error: "No points with positive x and y for power fit." };
-    }
-    if (filtered.length < 2) {
-        return { params: null, error: "At least two valid points are required." };
-    }
 
-    try {
-        const n = filtered.length;
-        const sumLnX = filtered.reduce((acc, [x]) => acc + Math.log(x), 0);
-        const sumLnY = filtered.reduce((acc, [, y]) => acc + Math.log(y), 0);
-        const sumLnXLnY = filtered.reduce((acc, [x, y]) => acc + Math.log(x) * Math.log(y), 0);
-        const sumLnX2 = filtered.reduce((acc, [x]) => acc + Math.log(x) ** 2, 0);
-
-        const denominator = n * sumLnX2 - sumLnX ** 2;
-        if (denominator === 0) {
-            return { params: null, error: "Denominator is zero, can't compute fit (check data points)." };
-        }
-
-        const a = (sumLnY * sumLnX2 - sumLnX * sumLnXLnY) / denominator;
-        const b = (n * sumLnXLnY - sumLnX * sumLnY) / denominator;
-
-        const A = Math.exp(a);
-
-        if (!isFinite(A) || !isFinite(b)) {
-            return { params: null, error: "Computed parameters are not finite numbers." };
-        }
-
-        return { params: [A, b], error: null };
-    } catch (e: any) {
-        return { params: null, error: e?.message || "Unknown error during power fitting." };
-    }
-}
-
-function evaluatePower([A, b]: [number, number], x: number): number {
-    return A * x ** b;
-}
-
-function getErrorMetrics(points: [number, number][], params: [number, number]) {
-    const residuals = points.map(([x, y]) => y - evaluatePower(params, x));
-    const n = points.length;
-    const mse = residuals.reduce((acc, r) => acc + r ** 2, 0) / n;
-    const rmse = Math.sqrt(mse);
-    const yMean = points.reduce((acc, [, y]) => acc + y, 0) / n;
-    const ssTot = points.reduce((acc, [, y]) => acc + (y - yMean) ** 2, 0);
-    const ssRes = residuals.reduce((acc, r) => acc + r ** 2, 0);
-    const r2 = 1 - ssRes / ssTot;
-    return { rmse, r2 };
-}
 
 export default function PowerFitPage() {
     const [points, setPoints] = useState<[number, number][]>([
@@ -112,7 +63,7 @@ export default function PowerFitPage() {
     const fitX = Array.from({ length: 100 }, (_, i) => minX + (i * (maxX - minX)) / 99);
     const fitY = params ? fitX.map(x => evaluatePower(params, x)) : [];
 
-    const { rmse, r2 } = params ? getErrorMetrics(points, params) : { rmse: NaN, r2: NaN };
+    const { rmse, r2 } = params ? getPowerErrorMetrics(points, params) : { rmse: NaN, r2: NaN };
     const downloadPlot = async () => {
         const chartCanvas = document.querySelector('canvas');
         if (!chartCanvas) return;

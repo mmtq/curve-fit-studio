@@ -9,22 +9,22 @@ export default function TeamSection() {
       name: 'Iftaker Ahamed',
       role: 'C221020',
       image: 'https://avatars.githubusercontent.com/u/95583680',
-      bg: 'bg-pink-200 dark:bg-pink-800',
-      text: 'text-pink-900 dark:text-pink-200',
+      bg: 'bg-[#3b0a2a]',
+      text: 'text-[#f9c2d3]',
     },
     {
       name: 'Mir Md Tarihmul Quader',
       role: 'C221017',
-      image: 'https://avatars.githubusercontent.com/u/147413532',
-      bg: 'bg-orange-200 dark:bg-orange-800',
-      text: 'text-orange-900 dark:text-orange-200',
+      image: '/hehe.png',
+      bg: 'bg-[#0d1b3e]',
+      text: 'text-[#facc15]',
     },
     {
       name: 'Turja Dutta',
       role: 'C221026',
       image: 'https://avatars.githubusercontent.com/u/133532872',
-      bg: 'bg-purple-200 dark:bg-purple-800',
-      text: 'text-purple-900 dark:text-purple-200',
+      bg: 'bg-[#2a004f]',
+      text: 'text-[#d8b4fe]',
     },
   ];
 
@@ -42,10 +42,13 @@ export default function TeamSection() {
           className="flex-1 max-w-md"
         >
           <h2 className="text-3xl md:text-4xl font-extrabold leading-tight dark:text-white">
-            Our Best Working <br /> Team
+            Meet the Development <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+              Team
+            </span>
           </h2>
           <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-sm">
-            Effective teams communicate openly, leverage strengths, and embrace diversity for success.
+            This project is the result of collaborative effort by dedicated Computer Science students, combining skills in design, development, and innovation.
           </p>
           {/* <button
             type="button"
@@ -57,20 +60,20 @@ export default function TeamSection() {
         </motion.div>
 
         {/* Team Cards */}
-        <div className="flex flex-1 gap-8 md:gap-10">
+        <div className="md:flex md:flex-1 gap-4 md:gap-10">
           {team.map(({ name, role, image, bg, text }) => (
             <motion.div
               key={name}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className={`${bg} rounded-2xl p-6 flex flex-col items-center min-w-[180px]`}
+              className={`${bg} rounded-2xl p-6 flex flex-col items-center min-w-[180px] mt-4`}
             >
               <div
-                className=" rounded-xl mb-6 flex items-center justify-center text-5xl"
+                className=" rounded-full mb-6 flex items-center justify-center text-5xl bg-white"
                 aria-label={name}
               >
-                <img src={image} alt={name} className='w-32 h-32 rounded-lg' />
+                <img src={image} alt={name} className='w-32 h-32 rounded-full' />
               </div>
               <h3 className={`font-semibold ${text} text-center`}>{name}</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{role}</p>

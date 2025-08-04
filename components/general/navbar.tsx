@@ -1,7 +1,8 @@
 'use client'
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
+import { Menu } from "lucide-react"
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -13,32 +14,43 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "framer-motion"
 
 const navigationLinks = [
   { href: "/", label: "Home" },
-  { href: "#features", label: "Features" },
+  { href: "/#features", label: "Features" },
   { href: "/theory", label: "Theory" },
   { href: "/team", label: "Team" },
 ]
 
 export default function NavBar() {
-  return (
-    <header className="border-b px-4 md:px-6 bg-background">
-      <div className="flex h-16 items-center justify-between">
-        {/* Left: Logo + Nav */}
-        <div className="flex items-center gap-6">
-          <Link href="/" className="text-2xl font-bold tracking-tight text-primary">
-            CurveFit Studio
-          </Link>
+  const [menuOpen, setMenuOpen] = useState(false)
 
-          {/* Desktop Navigation */}
+  return (
+    <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6 shadow-sm">
+      <div className="flex h-16 items-center justify-between">
+        {/* Logo + Desktop Nav */}
+        <div className="flex items-center gap-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Link
+              href="/"
+              className="text-2xl font-bold tracking-tight text-primary"
+            >
+              <img src="/logo.png" className="h-30" alt="" />
+            </Link>
+          </motion.div>
+
           <nav className="hidden md:flex gap-4">
             {navigationLinks.map((link, i) => (
               <Link
                 key={i}
                 href={link.href}
-                className="text-muted-foreground hover:text-primary text-sm font-medium transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
                 {link.label}
               </Link>
@@ -46,35 +58,51 @@ export default function NavBar() {
           </nav>
         </div>
 
-        {/* Right: CTA + Mobile Menu */}
+        {/* CTA + Mobile Menu */}
         <div className="flex items-center gap-2">
           <Button asChild size="sm">
-            <a href="#">Get Started</a>
+            <Link href="/get-started">Get Started</Link>
           </Button>
 
-          {/* Mobile Menu */}
-          <Popover>
+          {/* Mobile Menu Button */}
+          <Popover open={menuOpen} onOpenChange={setMenuOpen}>
             <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label="Toggle Menu"
+              >
                 <Menu className="w-5 h-5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-40 p-2 md:hidden">
-              <NavigationMenu className="w-full">
-                <NavigationMenuList className="flex-col gap-1">
-                  {navigationLinks.map((link, i) => (
-                    <NavigationMenuItem key={i}>
-                      <NavigationMenuLink
-                        asChild
-                        className="block w-full text-sm px-2 py-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
-                      >
-                        <Link href={link.href}>{link.label}</Link>
-                      </NavigationMenuLink>
-                    </NavigationMenuItem>
-                  ))}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </PopoverContent>
+
+            <AnimatePresence>
+              {menuOpen && (
+                <PopoverContent
+                  align="end"
+                  className="w-40 p-2 md:hidden bg-popover border rounded-md shadow-md"
+                  asChild
+                >
+                  <div>
+                    <NavigationMenu className="w-full">
+                      <NavigationMenuList className="flex-col gap-1">
+                        {navigationLinks.map((link, i) => (
+                          <NavigationMenuItem key={i}>
+                            <NavigationMenuLink
+                              asChild
+                              className="block w-full text-sm px-2 py-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                            >
+                              <Link href={link.href}>{link.label}</Link>
+                            </NavigationMenuLink>
+                          </NavigationMenuItem>
+                        ))}
+                      </NavigationMenuList>
+                    </NavigationMenu>
+                  </div>
+                </PopoverContent>
+              )}
+            </AnimatePresence>
           </Popover>
         </div>
       </div>

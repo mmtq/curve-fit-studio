@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   LineElement,
@@ -23,38 +22,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Chart from '@/components/general/chart';
 import { GetCode } from '@/components/general/get-code';
+import { linearFit } from '@/actions/fit-action';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
 
-function linearFit(points: [number, number][]) {
-  const n = points.length;
-  if (n < 2) {
-    return { slope: NaN, intercept: NaN, rmse: NaN, r2: NaN, error: 'At least two points are required for linear fit.' };
-  }
-
-  const sumX = points.reduce((acc, [x]) => acc + x, 0);
-  const sumY = points.reduce((acc, [, y]) => acc + y, 0);
-  const sumXY = points.reduce((acc, [x, y]) => acc + x * y, 0);
-  const sumX2 = points.reduce((acc, [x]) => acc + x * x, 0);
-
-  const denominator = n * sumX2 - sumX ** 2;
-  if (denominator === 0) {
-    return { slope: NaN, intercept: NaN, rmse: NaN, r2: NaN, error: 'Denominator zero, cannot compute fit (check points).' };
-  }
-
-  const slope = (n * sumXY - sumX * sumY) / denominator;
-  const intercept = (sumY - slope * sumX) / n;
-
-  const residuals = points.map(([x, y]) => y - (slope * x + intercept));
-  const mse = residuals.reduce((acc, r) => acc + r * r, 0) / n;
-  const rmse = Math.sqrt(mse);
-  const yMean = sumY / n;
-  const ssTot = points.reduce((acc, [, y]) => acc + (y - yMean) ** 2, 0);
-  const ssRes = residuals.reduce((acc, r) => acc + r ** 2, 0);
-  const r2 = 1 - ssRes / ssTot;
-
-  return { slope, intercept, rmse, r2, error: null };
-}
 
 export default function LinearFitPage() {
   const [points, setPoints] = useState<[number, number][]>([

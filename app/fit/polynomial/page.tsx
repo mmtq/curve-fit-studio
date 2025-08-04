@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   LineElement,
@@ -11,7 +10,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { inv, multiply, transpose } from 'mathjs';
 import domtoimage from 'dom-to-image';
 import { Download, X } from 'lucide-react';
 import {
@@ -25,53 +23,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Chart from '@/components/general/chart';
 import { GetCode } from '@/components/general/get-code';
+import { evaluatePoly, getPolyErrorMetrics, polyFit } from '@/actions/fit-action';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
-
-function polyFit(points: [number, number][], degree: number): { coeffs: number[] | null; error: string | null } {
-  if (points.length === 0) {
-    return { coeffs: null, error: "No data points provided." };
-  }
-  if (degree < 1) {
-    return { coeffs: null, error: "Degree must be at least 1." };
-  }
-  if (degree >= points.length) {
-    return { coeffs: null, error: "Degree must be less than number of points." };
-  }
-
-  try {
-    const X = points.map(([x]) => Array.from({ length: degree + 1 }, (_, i) => x ** i));
-    const Y = points.map(([, y]) => [y]);
-    const Xt = transpose(X);
-    const XtX = multiply(Xt, X);
-
-    // Check if XtX is invertible by determinant (optional, but mathjs doesn't have det for matrices, so catch error instead)
-    // Alternatively, try-catch covers inversion failure.
-
-    const XtY = multiply(Xt, Y);
-    const coeffsMatrix = multiply(inv(XtX), XtY);
-    const coeffs = coeffsMatrix.map(c => c[0]);
-    return { coeffs, error: null };
-  } catch (e: any) {
-    return { coeffs: null, error: e?.message || "An unknown error occurred in polynomial fitting." };
-  }
-}
-
-function evaluatePoly(coeffs: number[], x: number): number {
-  return coeffs.reduce((sum, c, i) => sum + c * x ** i, 0);
-}
-
-function getErrorMetrics(points: [number, number][], coeffs: number[]) {
-  const residuals = points.map(([x, y]) => y - evaluatePoly(coeffs, x));
-  const n = points.length;
-  const mse = residuals.reduce((acc, r) => acc + r ** 2, 0) / n;
-  const rmse = Math.sqrt(mse);
-  const yMean = points.reduce((acc, [, y]) => acc + y, 0) / n;
-  const ssTot = points.reduce((acc, [, y]) => acc + (y - yMean) ** 2, 0);
-  const ssRes = residuals.reduce((acc, r) => acc + r ** 2, 0);
-  const r2 = 1 - ssRes / ssTot;
-  return { rmse, r2 };
-}
 
 export default function PolynomialFitPage() {
   const [points, setPoints] = useState<[number, number][]>([
@@ -86,7 +40,7 @@ export default function PolynomialFitPage() {
 
   const coeffsResult = polyFit(points, degree);
   const { coeffs, error: fitError } = coeffsResult;
-  const { rmse, r2 } = coeffs ? getErrorMetrics(points, coeffs) : { rmse: 0, r2: 0 };
+  const { rmse, r2 } = coeffs ? getPolyErrorMetrics(points, coeffs) : { rmse: 0, r2: 0 };
   const xVals = points.map(p => p[0]);
   const minX = Math.min(...xVals);
   const maxX = Math.max(...xVals);

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { GithubIcon, LinkedinIcon } from 'lucide-react';
+import Link from 'next/link';
 
 export default function TeamSection() {
   const team = [
@@ -11,13 +12,17 @@ export default function TeamSection() {
       image: 'https://avatars.githubusercontent.com/u/95583680',
       bg: 'bg-[#3b0a2a]',
       text: 'text-[#f9c2d3]',
+      github: 'https://github.com/SayemAhamed',
+      linkedin: 'https://www.linkedin.com/in/sayem-ahamed-47b890242/'
     },
     {
-      name: 'Mir Md Tarihmul Quader',
+      name: 'Mir Md Tarhimul Quader',
       role: 'C221017',
       image: '/hehe.png',
       bg: 'bg-[#0d1b3e]',
       text: 'text-[#facc15]',
+      github: 'https://github.com/mmtq',
+      linkedin: 'https://www.linkedin.com/in/tarhimul/'
     },
     {
       name: 'Turja Dutta',
@@ -25,6 +30,8 @@ export default function TeamSection() {
       image: 'https://avatars.githubusercontent.com/u/133532872',
       bg: 'bg-[#2a004f]',
       text: 'text-[#d8b4fe]',
+      github: 'https://github.com/duttaturja',
+      linkedin: 'https://www.linkedin.com/in/duttaturja/'
     },
   ];
 
@@ -61,7 +68,7 @@ export default function TeamSection() {
 
         {/* Team Cards */}
         <div className="md:flex md:flex-1 gap-4 md:gap-10">
-          {team.map(({ name, role, image, bg, text }) => (
+          {team.map(({ name, role, image, bg, text, github, linkedin }, index) => (
             <motion.div
               key={name}
               initial={{ opacity: 0, y: 30 }}
@@ -70,17 +77,24 @@ export default function TeamSection() {
               className={`${bg} rounded-2xl p-6 flex flex-col items-center min-w-[180px] mt-4`}
             >
               <div
-                className=" rounded-full mb-6 flex items-center justify-center text-5xl bg-white"
+                className="rounded-full mb-6 flex items-center justify-center text-5xl bg-white"
                 aria-label={name}
               >
-                <img src={image} alt={name} className='w-32 h-32 rounded-full' />
+                <img
+                  src={image}
+                  alt={name}
+                  className={`w-32 h-32 rounded-full ${index % 2 === 0 ? 'p-1' : ''}`}
+                />
               </div>
               <h3 className={`font-semibold ${text} text-center`}>{name}</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{role}</p>
               <div className="flex gap-4 text-gray-700 dark:text-gray-300">
-                {/* Icons for social */}
-                <LinkedinIcon className={iconClasses} />
-                <GithubIcon className={iconClasses} />
+                <Link href={linkedin}>
+                  <LinkedinIcon className={iconClasses} />
+                </Link>
+                <Link href={github}>
+                  <GithubIcon className={iconClasses} />
+                </Link>
                 <svg
                   className={iconClasses}
                   fill="currentColor"

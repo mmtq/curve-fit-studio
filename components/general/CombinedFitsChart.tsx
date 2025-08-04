@@ -11,6 +11,7 @@ import {
   Filler,
   CategoryScale,
 } from 'chart.js';
+import { useEffect, useMemo, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 
 ChartJS.register(
@@ -36,30 +37,41 @@ interface Props {
 }
 
 export default function CombinedFitsChart({ points, fits }: Props) {
-  const datasets = [
-    {
-      label: 'Data Points',
-      data: points.map(([x, y]) => ({ x, y })),
-      backgroundColor: '#000',
-      borderColor: '#000',
-      showLine: false,
-      pointRadius: 5,
-      pointHoverRadius: 6,
-    },
-    ...fits
-      .filter(f => f.visible && f.fitX.length === f.fitY.length)
-      .map(fit => ({
-        label: `${fit.name} Fit`,
-        data: fit.fitX.map((x, i) => ({ x, y: fit.fitY[i] })),
-        borderColor: fit.color,
-        borderWidth: 2,
-        tension: 0.25,
-        fill: false,
-        pointRadius: 0,
-      })),
-  ];
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const data = { datasets };
+  if (!mounted) {
+    return null;
+  }
+
+  const data = useMemo(() => {
+    const datasets = [
+      {
+        label: 'Data Points',
+        data: points.map(([x, y]) => ({ x, y })),
+        backgroundColor: '#000',
+        borderColor: '#000',
+        showLine: false,
+        pointRadius: 5,
+        pointHoverRadius: 6,
+      },
+      ...fits
+        .filter(f => f.visible && f.fitX.length === f.fitY.length)
+        .map(f => ({
+          label: `${f.name} Fit`,
+          data: f.fitX.map((x, i) => ({ x, y: f.fitY[i] })),
+          borderColor: f.color,
+          borderWidth: 2,
+          tension: 0.25,
+          fill: false,
+          pointRadius: 0,
+        })),
+    ];
+
+    return { datasets };
+  }, [points, fits]);
 
   const options = {
     responsive: true,

@@ -4,7 +4,14 @@ import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 
-export default function Algos({ algoCards }: { algoCards: any[] }) {
+interface AlgoCard {
+  title: string;
+  href: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+export default function Algos({ algoCards }: { algoCards: AlgoCard[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

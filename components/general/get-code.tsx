@@ -62,13 +62,10 @@ export function GetCode({ name, points, degree }: GetCodeProps) {
                 <DialogHeader>
                     <DialogTitle>Python</DialogTitle>
                     <DialogDescription>
-                        <div className="relative mt-4">
-                            <pre className="h-96 overflow-y-auto overflow-x-auto rounded-lg">
+                        <div className="relative mt-4 h-96 overflow-y-auto overflow-x-auto rounded-lg">
                                 <SyntaxHighlighter language="python" style={dracula} customStyle={{ borderRadius: '0.5rem', fontSize: '0.875rem' }}>
                                     {code}
                                 </SyntaxHighlighter>
-
-                            </pre>
                             <Button
                                 onClick={handleCopy}
                                 className="absolute top-2 right-2 flex items-center gap-1 text-xs"

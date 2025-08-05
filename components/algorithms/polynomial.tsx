@@ -30,7 +30,7 @@ export default function PolynomialFitCard() {
                 </p>
             </div>
 
-            <DataPointsInput degree={degree} setDegree={setDegree} />
+            <DataPointsInput degree={degree} setDegree={setDegree} polynomial={true} />
 
             {error && (
                 <ErrorCard error={error} />

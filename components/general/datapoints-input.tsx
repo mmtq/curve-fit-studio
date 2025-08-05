@@ -14,11 +14,12 @@ import { useState } from 'react';
 import CSVUploader from './uploadcsvbutton';
 
 interface Props {
+    polynomial?: boolean
     degree?: number
     setDegree?: (degree: number) => void
 }
 
-const DataPointsInput = ({ degree, setDegree }: Props) => {
+const DataPointsInput = ({ degree, setDegree, polynomial }: Props) => {
     const { points, setPoints } = useInputPoints();
     const [xVal, setXVal] = useState('');
     const [yVal, setYVal] = useState('');
@@ -78,16 +79,18 @@ const DataPointsInput = ({ degree, setDegree }: Props) => {
                     {/* Degree and CSV Upload */}
                     <div className="flex justify-center sm:flex-row items-end gap-4">
                         {
-                            degree && (
+                            polynomial && (
                                 <div className="space-y-2">
                                     <Label htmlFor="degree">Degree</Label>
                                     <Input
-                                        id="degree"
                                         type="number"
                                         value={degree}
-                                        onChange={(e) => setDegree?.(parseInt(e.target.value))}
-                                        placeholder="Degree"
-                                        className="sm:w-32"
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            if (!isNaN(val)) setDegree!(val);
+                                        }}
+                                        min={1}
+                                        max={20}
                                     />
                                 </div>
                             )

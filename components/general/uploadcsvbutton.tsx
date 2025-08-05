@@ -1,3 +1,5 @@
+'use client';
+
 import { useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,26 +20,30 @@ export default function CSVUploader({ onPoints }: CSVUploaderProps) {
       const reader = new FileReader();
       reader.onload = () => {
         const text = reader.result as string;
-        const lines = text.split('\n');
+        const lines = text.split('\n').filter(Boolean);
         const result: [number, number][] = [];
 
-        for (const line of lines) {
-          const [xStr, yStr] = line.trim().split(','); // assuming x,y with header
-          const x = parseFloat(xStr);
-          const y = parseFloat(yStr);
-          if (!isNaN(x) && !isNaN(y)) result.push([x, y]);
+        let startIndex = 0;
+
+        // Check if first line is a header (non-numeric x or y)
+        const [firstX, firstY] = lines[0].trim().split(',');
+        if (isNaN(parseFloat(firstX)) || isNaN(parseFloat(firstY))) {
+          startIndex = 1;
         }
 
-        // If first line is header, skip it
-        if (typeof lines[0] === 'string' && lines[0].toLowerCase().includes('x')) {
-          result.shift(); // remove the header row
+        for (let i = startIndex; i < lines.length; i++) {
+          const [xStr, yStr] = lines[i].trim().split(',');
+          const x = parseFloat(xStr);
+          const y = parseFloat(yStr);
+          if (!isNaN(x) && !isNaN(y)) {
+            result.push([x, y]);
+          }
         }
 
         onPoints(result);
       };
 
       reader.readAsText(file);
-
     } catch (error) {
       console.error('Error reading CSV file:', error);
     }

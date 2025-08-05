@@ -13,6 +13,8 @@ import {
     CategoryScale,
     ChartOptions
 } from 'chart.js';
+import { ExpandIcon } from 'lucide-react';
+import Link from 'next/link';
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Legend);
 
@@ -31,6 +33,8 @@ interface FitResultCardProps {
 }
 
 export default function FitResultCard({ name, points, fit, highlight }: FitResultCardProps) {
+    const slug = name.toLowerCase().replace(' ', '-');
+
     const dataset = fit.error
         ? []
         : [
@@ -131,6 +135,9 @@ const options: ChartOptions<'line'> = {
                         <div className="h-[250px]">
                             <Line data={chartData} options={options} />
                         </div>
+                        <Link href={`/fit/${slug}`} className='flex justify-end'>
+                          <ExpandIcon className="w-4 h-4 " />
+                        </Link>
                     </>
                 )}
             </CardContent>

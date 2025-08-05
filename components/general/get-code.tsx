@@ -58,14 +58,24 @@ export function GetCode({ name, points, degree }: GetCodeProps) {
                 <Button variant="outline"><Code className="mr-1" /> Get Code</Button>
             </DialogTrigger>
 
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="max-w-none w-full sm:max-w-4xl">
                 <DialogHeader>
-                    <DialogTitle>Python</DialogTitle>
+                    <DialogTitle className="text-center text-sm">Python</DialogTitle>
                     <DialogDescription>
-                        <div className="relative mt-4 h-96 overflow-y-auto overflow-x-auto rounded-lg">
-                                <SyntaxHighlighter language="python" style={dracula} customStyle={{ borderRadius: '0.5rem', fontSize: '0.875rem' }}>
-                                    {code}
-                                </SyntaxHighlighter>
+                        <div className="relative mt-4 h-[70vh] max-w-[380px] lg:max-w-[850px] overflow-y-auto overflow-x-auto rounded-lg">
+                            <SyntaxHighlighter
+                                language="python"
+                                style={dracula}
+                                customStyle={{
+                                    whiteSpace: 'pre',
+                                    overflowX: 'auto',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
+                                    borderRadius: '0.5rem',
+                                }}
+                            >
+                                {code}
+                            </SyntaxHighlighter>
                             <Button
                                 onClick={handleCopy}
                                 className="absolute top-2 right-2 flex items-center gap-1 text-xs"

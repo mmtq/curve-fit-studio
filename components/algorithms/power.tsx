@@ -1,38 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-    Chart as ChartJS,
-    LineElement,
-    PointElement,
-    LinearScale,
-    Title,
-    Tooltip,
-    Legend,
-} from 'chart.js';
-import { X } from 'lucide-react';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { GetCode } from '@/components/general/get-code';
-import Chart from '@/components/general/chart';
-import CSVUploader from '../general/uploadcsvbutton';
-import { DownloadChartButton } from '../general/download-chart-button';
 import { useInputPoints } from '@/providers/InputPointsContext';
 import { powerFit } from '@/actions/algorithm-action';
-
-ChartJS.register(LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
+import DataPointsInput from '../general/datapoints-input';
+import VisualizationCard from '../general/visualization-card';
+import ErrorCard from '../general/error-card';
+import EquationErrorMetricesCard from '../general/eq-er-metrices';
 
 export default function PowerFitCard() {
     const { points, setPoints } = useInputPoints();
-
-    const [xVal, setXVal] = useState('');
-    const [yVal, setYVal] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const { fitX, fitY, rmse, r2, error: fitError, equation } = powerFit(points);
@@ -40,19 +17,6 @@ export default function PowerFitCard() {
     useEffect(() => {
         setError(fitError);
     }, [fitError]);
-
-    const handleAddPoint = () => {
-        const x = parseFloat(xVal);
-        const y = parseFloat(yVal);
-        if (!isNaN(x) && !isNaN(y)) {
-            setPoints([...points, [x, y]]);
-            setXVal('');
-            setYVal('');
-        }
-    };
-    const removePoint = (i: number) => setPoints(points.filter((_, idx) => idx !== i));
-
-
 
     return (
         <main className="p-8 max-w-5xl mx-auto space-y-10">
@@ -64,111 +28,12 @@ export default function PowerFitCard() {
                     Enter your data points below to visualize and evaluate a power regression fit.
                 </p>
             </div>
-
-            <Card className="border-dashed border-2 border-border bg-background">
-                <CardHeader>
-                    <CardTitle className="text-xl text-center">Add Data Points</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col justify-center sm:flex-row gap-3 items-center mb-4">
-                        <div className='flex items-center justify-items-end gap-4'>
-                            <div className='flex gap-2'>
-                                <Input
-                                    type="text"
-                                    value={xVal}
-                                    onChange={(e) => setXVal(e.target.value)}
-                                    placeholder="X value"
-                                    className="sm:w-40"
-                                />
-                                <Input
-                                    type="text"
-                                    value={yVal}
-                                    onChange={(e) => setYVal(e.target.value)}
-                                    placeholder="Y value"
-                                    className="sm:w-40"
-                                />
-                                <Button onClick={handleAddPoint} className="px-6">
-                                    Add
-                                </Button>
-                            </div>
-                            <CSVUploader onPoints={(newPoints) => setPoints(newPoints)} />
-                        </div>
-
-                    </div>
-
-                    {points.length > 0 && (
-                        <div className="flex flex-wrap gap-3 justify-center">
-                            {points.map(([x, y], idx) => (
-                                <div
-                                    key={idx}
-                                    className="relative bg-accent text-accent-foreground rounded-xl px-4 py-2 shadow flex items-center text-sm font-mono border border-border"
-                                >
-                                    <button
-                                        onClick={() => removePoint(idx)}
-                                        className="absolute -top-2 -left-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center hover:opacity-80"
-                                    >
-                                        <X size={12} />
-                                    </button>
-                                    ({x}, {y})
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
+            <DataPointsInput />
             {error && (
-                <Card className="border-dashed bg-background border-destructive">
-                    <CardContent>
-                        <p className="font-mono text-sm select-text">{error}</p>
-                    </CardContent>
-                </Card>
+                <ErrorCard error={error} />
             )}
-
-
-
-            <div className="grid sm:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Fitted Equation</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="font-mono text-lg select-text">{equation || 'No valid fit'}</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Error Metrics</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="list-disc pl-6 space-y-1 text-sm">
-                            <li><b>RMSE:</b> {isNaN(rmse) ? 'NaN' : rmse.toFixed(4)}</li>
-                            <li><b>R²:</b> {isNaN(r2) ? 'NaN' : r2.toFixed(4)}</li>
-                        </ul>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>
-                        <div className='flex items-center justify-between'>
-                            <div>Visualization</div>
-                            <div className='flex items-center gap-2'>
-                                <DownloadChartButton selector="canvas" filename="power-fit-plot.png" />
-                                <GetCode points={points} name='power' />
-                            </div>
-                        </div>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Chart
-                        fitX={fitX}
-                        fitY={fitY}
-                        points={points}
-                    />
-                </CardContent>
-            </Card>
+            <EquationErrorMetricesCard equation={equation} rmse={rmse} r2={r2} />
+            <VisualizationCard fitX={fitX} fitY={fitY} points={points} filename="power-fit" algoname="Power Curve Fit" />
         </main>
     );
 }

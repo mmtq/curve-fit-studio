@@ -74,7 +74,7 @@ export default function TeamSection() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className={`${bg} rounded-2xl p-6 flex flex-col items-center min-w-[180px] mt-4`}
+              className={`${bg} rounded-2xl p-6 flex flex-col items-center min-w-[180px] mt-4  duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/30 `}
             >
               <div
                 className="rounded-full mb-6 flex items-center justify-center text-5xl bg-white"
@@ -83,7 +83,10 @@ export default function TeamSection() {
                 <img
                   src={image}
                   alt={name}
-                  className={`w-32 h-32 rounded-full ${index % 2 === 0 ? 'p-1' : ''}`}
+                  className={`w-32 h-32 rounded-full transition-transform duration-300 ease-in-out
+    ${index % 2 === 0 ? 'p-1 hover:rotate-1' : 'hover:-rotate-1'}
+    hover:scale-105 hover:shadow-lg hover:shadow-primary/40 hover:ring-4 hover:ring-primary/50
+  `}
                 />
               </div>
               <h3 className={`font-semibold ${text} text-center`}>{name}</h3>

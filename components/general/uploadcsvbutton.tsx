@@ -44,7 +44,7 @@ export default function CSVUploader({ onPoints }: CSVUploaderProps) {
   }
 
   return (
-    <form ref={formRef} className="border border-dotted border-muted-foreground/10 p-2 rounded">
+    <form ref={formRef} className="border border-dotted border-muted-foreground/10 p-2 rounded min-w-[150px]">
       <Label htmlFor="csv-upload" className="flex items-center gap-2 cursor-pointer">
         <UploadCloud className="w-5 h-5" />
         Upload CSV File

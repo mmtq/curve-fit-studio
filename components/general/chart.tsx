@@ -107,7 +107,7 @@ const Chart = ({ fitX, fitY, points }: Props) => {
   if (!mounted) return null;
 
   return (
-    <div className="w-full h-[400px]">
+    <div className="relative w-full aspect-[2/1]">
       <Line data={data} options={options} />
     </div>
   );
